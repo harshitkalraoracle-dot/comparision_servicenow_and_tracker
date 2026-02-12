@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incident Tracker Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2em;
+        }
+
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .upload-box {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            background: #f8f9ff;
+        }
+
+        .upload-box h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        input[type="file"] {
+            margin: 10px 0;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .results {
+            margin-top: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .count-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+
+        .count-badge.warning {
+            background: #f59e0b;
+        }
+
+        .count-badge.danger {
+            background: #ef4444;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.9em;
+        }
+
+        tr:hover {
+            background: #f8f9ff;
+        }
+
+        .priority-high {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .priority-medium {
+            color: #f59e0b;
+            font-weight: bold;
+        }
+
+        .priority-low {
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-missing {
+            background: #ef4444;
+        }
+
+        .status-mismatch {
+            background: #f59e0b;
+        }
+
+        .status-incomplete {
+            background: #3b82f6;
+        }
+
+        .person-section {
+            margin-bottom: 25px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            background: #fafafa;
+        }
+
+        .person-section h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        .missing-fields {
+            color: #ef4444;
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Incident Tracker Analyzer</h1>
+        
+        <div class="upload-section">
+            <div class="upload-box">
+                <h3>📋 Service Now Sheet (Source of Truth)</h3>
+                <input type="file" id="serviceNowFile" accept=".xlsx">
+                <p style="color: #6b7280; font-size: 0.9em; margin-top: 10px;">
+                    Upload your Service Now export (.xlsx only)
+                </p>
+            </div>
+            
+            <div class="upload-box">
+                <h3>📝 Tracker Sheet (Team Updates)</h3>
+                <input type="file" id="trackerFile" accept=".xlsx">
+                <p style="color: #6b7280; font-size: 0.9em; margin-top: 10px;">
+                    Upload your team's tracker sheet (.xlsx only)
+                </p>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <button id="analyzeBtn" onclick="analyzeSheets()" disabled>🔍 Analyze Sheets</button>
+        </div>
+
+        <div id="results" class="results" style="display: none;">
+            <!-- Section 1: Missing in Tracker (In ServiceNow but not in Tracker) -->
+            <div class="section">
+                <h2>
+                    <span class="status-indicator status-missing"></span>
+                    Missing in Tracker (In Service Now, Not in Tracker)
+                    <span id="missingCount" class="count-badge danger">0</span>
+                </h2>
+                <div id="missingTable"></div>
+            </div>
+
+            <!-- Section 2: In Tracker but Not in ServiceNow -->
+            <div class="section">
+                <h2>
+                    <span class="status-indicator status-mismatch"></span>
+                    In Tracker Only (Not in Service Now)
+                    <span id="trackerOnlyCount" class="count-badge warning">0</span>
+                </h2>
+                <div id="trackerOnlyTable"></div>
+            </div>
+
+            <!-- Section 3: Priority Mismatches -->
+            <div class="section">
+                <h2>
+                    <span class="status-indicator status-mismatch"></span>
+                    Priority Mismatches
+                    <span id="mismatchCount" class="count-badge warning">0</span>
+                </h2>
+                <div id="mismatchTable"></div>
+            </div>
+
+            <!-- Section 4: Incomplete Entries by Person -->
+            <div class="section">
+                <h2>
+                    <span class="status-indicator status-incomplete"></span>
+                    Incomplete Entries by Team Member
+                    <span id="incompleteCount" class="count-badge">0</span>
+                </h2>
+                <div id="incompleteByPerson"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        let serviceNowData = null;
+        let trackerData = null;
+
+        // All columns that should be checked in Tracker
+        const TRACKER_REQUIRED_COLUMNS = [
+            'SR#',
+            'Module',
+            'SR Open Date',
+            'Assignment Date',
+            'Close Date',
+            'Incident Category',
+            'Type',
+            'CSU',
+            'Priority',
+            'Severity',
+            'Description',
+            'Requested By',
+            'Worked By',
+            'Status',
+            'Current Owner',
+            'Detail Description and Solution',
+            'Comments',
+            'SAAS Support SR (if any)'
+        ];
+
+        // Enable analyze button when both files are uploaded
+        document.getElementById('serviceNowFile').addEventListener('change', checkFiles);
+        document.getElementById('trackerFile').addEventListener('change', checkFiles);
+
+        function checkFiles() {
+            const serviceNowFile = document.getElementById('serviceNowFile').files[0];
+            const trackerFile = document.getElementById('trackerFile').files[0];
+            
+            // Check if files are xlsx
+            if (serviceNowFile && !serviceNowFile.name.endsWith('.xlsx')) {
+                alert('Please upload only .xlsx files for Service Now sheet');
+                document.getElementById('serviceNowFile').value = '';
+                return;
+            }
+            if (trackerFile && !trackerFile.name.endsWith('.xlsx')) {
+                alert('Please upload only .xlsx files for Tracker sheet');
+                document.getElementById('trackerFile').value = '';
+                return;
+            }
+            
+            document.getElementById('analyzeBtn').disabled = !(serviceNowFile && trackerFile);
+        }
+
+        function readExcelFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, {raw: false, defval: ''});
+                        resolve(jsonData);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        async function analyzeSheets() {
+            try {
+                document.getElementById('analyzeBtn').disabled = true;
+                document.getElementById('analyzeBtn').innerHTML = '⏳ Analyzing...';
+
+                const serviceNowFile = document.getElementById('serviceNowFile').files[0];
+                const trackerFile = document.getElementById('trackerFile').files[0];
+
+                serviceNowData = await readExcelFile(serviceNowFile);
+                trackerData = await readExcelFile(trackerFile);
+
+                // Perform analysis
+                analyzeData();
+
+                document.getElementById('results').style.display = 'block';
+                document.getElementById('analyzeBtn').innerHTML = '✓ Analysis Complete';
+                
+                setTimeout(() => {
+                    document.getElementById('analyzeBtn').innerHTML = '🔍 Analyze Sheets';
+                    document.getElementById('analyzeBtn').disabled = false;
+                }, 2000);
+
+            } catch (error) {
+                alert('Error analyzing files: ' + error.message);
+                document.getElementById('analyzeBtn').innerHTML = '🔍 Analyze Sheets';
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+
+        function analyzeData() {
+            // Create lookup maps
+            const trackerMap = new Map();
+            const serviceNowMap = new Map();
+            
+            trackerData.forEach(row => {
+                const srNum = (row['SR#'] || '').toString().trim();
+                if (srNum) {
+                    trackerMap.set(srNum, row);
+                }
+            });
+
+            serviceNowData.forEach(row => {
+                const srNum = (row['SR#'] || row['Number'] || '').toString().trim();
+                if (srNum) {
+                    serviceNowMap.set(srNum, row);
+                }
+            });
+
+            // 1. Find missing incidents (in ServiceNow but not in Tracker)
+            const missing = [];
+            serviceNowData.forEach(row => {
+                const srNum = (row['SR#'] || row['Number'] || '').toString().trim();
+                if (srNum && !trackerMap.has(srNum)) {
+                    missing.push(row);
+                }
+            });
+
+            // 2. Find incidents in Tracker but NOT in ServiceNow
+            const trackerOnly = [];
+            trackerData.forEach(row => {
+                const srNum = (row['SR#'] || '').toString().trim();
+                if (srNum && !serviceNowMap.has(srNum)) {
+                    trackerOnly.push(row);
+                }
+            });
+
+            // 3. Find priority mismatches
+            const mismatches = [];
+            serviceNowData.forEach(row => {
+                const srNum = (row['SR#'] || row['Number'] || '').toString().trim();
+                if (srNum && trackerMap.has(srNum)) {
+                    const trackerRow = trackerMap.get(srNum);
+                    const snPriority = (row['Priority'] || '').toString().trim();
+                    const trackerPriority = (trackerRow['Priority'] || '').toString().trim();
+                    
+                    if (snPriority && trackerPriority && snPriority !== trackerPriority) {
+                        mismatches.push({
+                            sr: srNum,
+                            snPriority: snPriority,
+                            trackerPriority: trackerPriority,
+                            description: row['Description'] || '',
+                            workedBy: trackerRow['Worked By'] || ''
+                        });
+                    }
+                }
+            });
+
+            // 4. Find incomplete entries grouped by person (check ALL columns)
+            const incompleteByPerson = {};
+            trackerData.forEach(row => {
+                const workedBy = (row['Worked By'] || '').toString().trim();
+                
+                // Check for blank/empty columns from the full list
+                const emptyFields = [];
+                
+                TRACKER_REQUIRED_COLUMNS.forEach(field => {
+                    const value = (row[field] || '').toString().trim();
+                    if (!value || value === '') {
+                        emptyFields.push(field);
+                    }
+                });
+
+                if (emptyFields.length > 0) {
+                    const personKey = workedBy || 'Unassigned';
+                    if (!incompleteByPerson[personKey]) {
+                        incompleteByPerson[personKey] = [];
+                    }
+                    incompleteByPerson[personKey].push({
+                        sr: row['SR#'] || 'N/A',
+                        emptyFields: emptyFields,
+                        description: row['Description'] || 'N/A'
+                    });
+                }
+            });
+
+            // Display results
+            displayMissing(missing);
+            displayTrackerOnly(trackerOnly);
+            displayMismatches(mismatches);
+            displayIncompleteByPerson(incompleteByPerson);
+        }
+
+        function displayMissing(missing) {
+            document.getElementById('missingCount').textContent = missing.length;
+            const container = document.getElementById('missingTable');
+            
+            if (missing.length === 0) {
+                container.innerHTML = '<div class="empty-state">✓ All Service Now incidents are tracked!</div>';
+                return;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>SR#/Number</th>
+                            <th>Priority</th>
+                            <th>Description</th>
+                            <th>Open Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            missing.forEach(row => {
+                const priority = row['Priority'] || '';
+                const priorityClass = getPriorityClass(priority);
+                html += `
+                    <tr>
+                        <td><strong>${row['SR#'] || row['Number'] || 'N/A'}</strong></td>
+                        <td class="${priorityClass}">${priority || 'N/A'}</td>
+                        <td>${row['Description'] || 'N/A'}</td>
+                        <td>${row['SR Open Date'] || row['Open Date'] || 'N/A'}</td>
+                        <td>${row['Status'] || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function displayTrackerOnly(trackerOnly) {
+            document.getElementById('trackerOnlyCount').textContent = trackerOnly.length;
+            const container = document.getElementById('trackerOnlyTable');
+            
+            if (trackerOnly.length === 0) {
+                container.innerHTML = '<div class="empty-state">✓ All Tracker incidents exist in Service Now!</div>';
+                return;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>SR#</th>
+                            <th>Description</th>
+                            <th>Worked By</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            trackerOnly.forEach(row => {
+                const priority = row['Priority'] || '';
+                const priorityClass = getPriorityClass(priority);
+                html += `
+                    <tr>
+                        <td><strong>${row['SR#'] || 'N/A'}</strong></td>
+                        <td>${row['Description'] || 'N/A'}</td>
+                        <td>${row['Worked By'] || 'N/A'}</td>
+                        <td class="${priorityClass}">${priority || 'N/A'}</td>
+                        <td>${row['Status'] || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function displayMismatches(mismatches) {
+            document.getElementById('mismatchCount').textContent = mismatches.length;
+            const container = document.getElementById('mismatchTable');
+            
+            if (mismatches.length === 0) {
+                container.innerHTML = '<div class="empty-state">✓ All priorities match!</div>';
+                return;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>SR#</th>
+                            <th>ServiceNow Priority</th>
+                            <th>Tracker Priority</th>
+                            <th>Worked By</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            mismatches.forEach(item => {
+                const snPriorityClass = getPriorityClass(item.snPriority);
+                const trackerPriorityClass = getPriorityClass(item.trackerPriority);
+                html += `
+                    <tr>
+                        <td><strong>${item.sr}</strong></td>
+                        <td class="${snPriorityClass}">${item.snPriority}</td>
+                        <td class="${trackerPriorityClass}">${item.trackerPriority}</td>
+                        <td>${item.workedBy || 'N/A'}</td>
+                        <td>${item.description}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function displayIncompleteByPerson(incompleteByPerson) {
+            const totalIncomplete = Object.values(incompleteByPerson).reduce((sum, arr) => sum + arr.length, 0);
+            document.getElementById('incompleteCount').textContent = totalIncomplete;
+            const container = document.getElementById('incompleteByPerson');
+            
+            if (totalIncomplete === 0) {
+                container.innerHTML = '<div class="empty-state">✓ All entries are complete!</div>';
+                return;
+            }
+
+            let html = '';
+
+            Object.keys(incompleteByPerson).sort().forEach(person => {
+                const entries = incompleteByPerson[person];
+                html += `
+                    <div class="person-section">
+                        <h3>${person} <span class="count-badge">${entries.length} incomplete</span></h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%;">SR#</th>
+                                    <th style="width: 45%;">Missing Fields</th>
+                                    <th style="width: 40%;">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                entries.forEach(entry => {
+                    html += `
+                        <tr>
+                            <td><strong>${entry.sr}</strong></td>
+                            <td><span class="missing-fields">${entry.emptyFields.join(', ')}</span></td>
+                            <td>${entry.description}</td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table></div>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        function getPriorityClass(priority) {
+            const p = priority.toString().toLowerCase();
+            if (p.includes('1') || p.includes('high') || p.includes('critical')) {
+                return 'priority-high';
+            } else if (p.includes('2') || p.includes('medium') || p.includes('moderate')) {
+                return 'priority-medium';
+            } else if (p.includes('3') || p.includes('low')) {
+                return 'priority-low';
+            }
+            return '';
+        }
+    </script>
+</body>
+</html>
