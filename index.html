@@ -111,6 +111,10 @@
             background: #ef4444;
         }
 
+        .count-badge.duplicate {
+            background: #8b5cf6;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -182,6 +186,10 @@
             background: #3b82f6;
         }
 
+        .status-duplicate {
+            background: #8b5cf6;
+        }
+
         .person-section {
             margin-bottom: 25px;
             border: 1px solid #e5e7eb;
@@ -205,6 +213,19 @@
         .missing-fields {
             color: #ef4444;
             font-size: 0.85em;
+        }
+
+        .duplicate-row {
+            background: #fdf4ff !important;
+        }
+
+        .duplicate-badge {
+            background: #8b5cf6;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 6px;
         }
     </style>
 </head>
@@ -273,6 +294,16 @@
                     <span id="incompleteCount" class="count-badge">0</span>
                 </h2>
                 <div id="incompleteByPerson"></div>
+            </div>
+
+            <!-- Section 5: Duplicates in Tracker -->
+            <div class="section">
+                <h2>
+                    <span class="status-indicator status-duplicate"></span>
+                    Duplicate Entries in Tracker
+                    <span id="duplicateCount" class="count-badge duplicate">0</span>
+                </h2>
+                <div id="duplicateTable"></div>
             </div>
         </div>
     </div>
@@ -461,11 +492,31 @@
                 }
             });
 
+            // 5. Find duplicate SR# entries in Tracker
+            const srOccurrences = {};
+            trackerData.forEach((row, index) => {
+                const srNum = (row['SR#'] || '').toString().trim();
+                if (srNum) {
+                    if (!srOccurrences[srNum]) {
+                        srOccurrences[srNum] = [];
+                    }
+                    srOccurrences[srNum].push({ row, index: index + 2 }); // +2 for header row + 1-based index
+                }
+            });
+
+            const duplicates = {};
+            Object.keys(srOccurrences).forEach(srNum => {
+                if (srOccurrences[srNum].length > 1) {
+                    duplicates[srNum] = srOccurrences[srNum];
+                }
+            });
+
             // Display results
             displayMissing(missing);
             displayTrackerOnly(trackerOnly);
             displayMismatches(mismatches);
             displayIncompleteByPerson(incompleteByPerson);
+            displayDuplicates(duplicates);
         }
 
         function displayMissing(missing) {
@@ -625,6 +676,65 @@
                             <td><strong>${entry.sr}</strong></td>
                             <td><span class="missing-fields">${entry.emptyFields.join(', ')}</span></td>
                             <td>${entry.description}</td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table></div>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        function displayDuplicates(duplicates) {
+            const totalDuplicateGroups = Object.keys(duplicates).length;
+            const totalDuplicateRows = Object.values(duplicates).reduce((sum, arr) => sum + arr.length, 0);
+            document.getElementById('duplicateCount').textContent = totalDuplicateGroups > 0
+                ? `${totalDuplicateGroups} SR${totalDuplicateGroups > 1 ? 's' : ''} (${totalDuplicateRows} rows)`
+                : '0';
+
+            const container = document.getElementById('duplicateTable');
+
+            if (totalDuplicateGroups === 0) {
+                container.innerHTML = '<div class="empty-state">✓ No duplicate entries found in Tracker!</div>';
+                return;
+            }
+
+            let html = '';
+
+            Object.keys(duplicates).sort().forEach(srNum => {
+                const entries = duplicates[srNum];
+                html += `
+                    <div class="person-section" style="border-color: #d8b4fe; background: #fdf4ff;">
+                        <h3 style="color: #7c3aed;">
+                            SR# ${srNum}
+                            <span class="duplicate-badge">${entries.length} duplicates</span>
+                        </h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="background: #7c3aed;">Row #</th>
+                                    <th style="background: #7c3aed;">Description</th>
+                                    <th style="background: #7c3aed;">Worked By</th>
+                                    <th style="background: #7c3aed;">Priority</th>
+                                    <th style="background: #7c3aed;">Status</th>
+                                    <th style="background: #7c3aed;">SR Open Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                entries.forEach(({ row, index }) => {
+                    const priority = row['Priority'] || '';
+                    const priorityClass = getPriorityClass(priority);
+                    html += `
+                        <tr class="duplicate-row">
+                            <td><strong>Row ${index}</strong></td>
+                            <td>${row['Description'] || 'N/A'}</td>
+                            <td>${row['Worked By'] || 'N/A'}</td>
+                            <td class="${priorityClass}">${priority || 'N/A'}</td>
+                            <td>${row['Status'] || 'N/A'}</td>
+                            <td>${row['SR Open Date'] || 'N/A'}</td>
                         </tr>
                     `;
                 });
