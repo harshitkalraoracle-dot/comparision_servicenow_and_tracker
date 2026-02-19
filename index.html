@@ -251,6 +251,15 @@
             </div>
         </div>
 
+        <div style="display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 20px; flex-wrap: wrap;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: #f8f9ff; border: 1.5px solid #c4b5fd; border-radius: 8px; padding: 10px 18px; font-size: 0.95em; color: #5b21b6; font-weight: 500; user-select: none;" onclick="toggleOptionalColumns()">
+                <div id="toggleTrack" style="width:44px;height:24px;background:#d1d5db;border-radius:12px;position:relative;transition:background 0.25s;flex-shrink:0;">
+                    <div id="toggleThumb" style="width:20px;height:20px;background:white;border-radius:50%;position:absolute;top:2px;left:2px;transition:left 0.25s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+                </div>
+                Also check optional columns:
+                <span style="color:#7c3aed; font-style:italic; font-weight:400;">Module, Close Date, Detail Description and Solution, SAAS Support SR (if any)</span>
+            </label>
+        </div>
         <div style="text-align: center;">
             <button id="analyzeBtn" onclick="analyzeSheets()" disabled>🔍 Analyze Sheets</button>
         </div>
@@ -292,6 +301,7 @@
                     <span class="status-indicator status-incomplete"></span>
                     Incomplete Entries by Team Member
                     <span id="incompleteCount" class="count-badge">0</span>
+                    <span id="incompleteOptionalNote" style="display:none; font-size:0.75em; color:#7c3aed; font-weight:400; margin-left:8px;">+ optional columns</span>
                 </h2>
                 <div id="incompleteByPerson"></div>
             </div>
@@ -313,13 +323,11 @@
         let serviceNowData = null;
         let trackerData = null;
 
-        // All columns that should be checked in Tracker
+        // Core columns always checked
         const TRACKER_REQUIRED_COLUMNS = [
             'SR#',
-            'Module',
             'SR Open Date',
             'Assignment Date',
-            'Close Date',
             'Incident Category',
             'Type',
             'CSU',
@@ -330,10 +338,31 @@
             'Worked By',
             'Status',
             'Current Owner',
+            'Comments'
+        ];
+
+        // Optional columns checked only when toggle is enabled
+        const TRACKER_OPTIONAL_COLUMNS = [
+            'Module',
+            'Close Date',
             'Detail Description and Solution',
-            'Comments',
             'SAAS Support SR (if any)'
         ];
+
+        let checkOptionalColumns = false;
+
+        function toggleOptionalColumns() {
+            checkOptionalColumns = !checkOptionalColumns;
+            const track = document.getElementById('toggleTrack');
+            const thumb = document.getElementById('toggleThumb');
+            if (checkOptionalColumns) {
+                track.style.background = '#7c3aed';
+                thumb.style.left = '22px';
+            } else {
+                track.style.background = '#d1d5db';
+                thumb.style.left = '2px';
+            }
+        }
 
         // Enable analyze button when both files are uploaded
         document.getElementById('serviceNowFile').addEventListener('change', checkFiles);
@@ -464,15 +493,18 @@
                 }
             });
 
-            // 4. Find incomplete entries grouped by person (check ALL columns)
+            // 4. Find incomplete entries grouped by person (check columns based on toggle)
+            const activeColumns = checkOptionalColumns
+                ? [...TRACKER_REQUIRED_COLUMNS, ...TRACKER_OPTIONAL_COLUMNS]
+                : TRACKER_REQUIRED_COLUMNS;
+
             const incompleteByPerson = {};
             trackerData.forEach(row => {
                 const workedBy = (row['Worked By'] || '').toString().trim();
                 
-                // Check for blank/empty columns from the full list
                 const emptyFields = [];
                 
-                TRACKER_REQUIRED_COLUMNS.forEach(field => {
+                activeColumns.forEach(field => {
                     const value = (row[field] || '').toString().trim();
                     if (!value || value === '') {
                         emptyFields.push(field);
@@ -645,6 +677,12 @@
         function displayIncompleteByPerson(incompleteByPerson) {
             const totalIncomplete = Object.values(incompleteByPerson).reduce((sum, arr) => sum + arr.length, 0);
             document.getElementById('incompleteCount').textContent = totalIncomplete;
+            const optionalNote = document.getElementById('incompleteOptionalNote');
+            if (checkOptionalColumns) {
+                optionalNote.style.display = 'inline';
+            } else {
+                optionalNote.style.display = 'none';
+            }
             const container = document.getElementById('incompleteByPerson');
             
             if (totalIncomplete === 0) {
