@@ -227,6 +227,26 @@
             font-size: 0.8em;
             margin-left: 6px;
         }
+
+        /* Summary table enhancements */
+        #missingFieldsSummary table th:nth-child(4),
+        #missingFieldsSummary table td:nth-child(4) {
+            text-align: center;
+        }
+
+        #missingFieldsSummary table th:nth-child(5),
+        #missingFieldsSummary table td:nth-child(5) {
+            text-align: center;
+            font-weight: 600;
+        }
+
+        #missingFieldsSummary tr:hover {
+            background: #fef3c7;
+        }
+
+        #missingFieldsSummary tr td:nth-child(3) {
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -295,11 +315,21 @@
                 <div id="mismatchTable"></div>
             </div>
 
-            <!-- Section 4: Incomplete Entries by Person -->
+            <!-- NEW Section 4a: Missing Fields Summary by Person -->
             <div class="section">
                 <h2>
                     <span class="status-indicator status-incomplete"></span>
-                    Incomplete Entries by Team Member
+                    Missing Fields Summary by Team Member
+                    <span id="summaryTotalCount" class="count-badge">0</span>
+                </h2>
+                <div id="missingFieldsSummary"></div>
+            </div>
+
+            <!-- Section 4: Incomplete Entries by Person (Detailed View) -->
+            <div class="section">
+                <h2>
+                    <span class="status-indicator status-incomplete"></span>
+                    Incomplete Entries by Team Member (Detailed)
                     <span id="incompleteCount" class="count-badge">0</span>
                     <span id="incompleteOptionalNote" style="display:none; font-size:0.75em; color:#7c3aed; font-weight:400; margin-left:8px;">+ optional columns</span>
                 </h2>
@@ -547,6 +577,7 @@
             displayMissing(missing);
             displayTrackerOnly(trackerOnly);
             displayMismatches(mismatches);
+            displayMissingFieldsSummary(incompleteByPerson, trackerData); // NEW: Summary table
             displayIncompleteByPerson(incompleteByPerson);
             displayDuplicates(duplicates);
         }
@@ -671,6 +702,102 @@
             });
 
             html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // NEW FUNCTION: Display summary table for missing fields by person
+        function displayMissingFieldsSummary(incompleteByPerson, allTrackerData) {
+            const container = document.getElementById('missingFieldsSummary');
+            
+            // Build summary data per person
+            const summary = {};
+            
+            // First, count total incidents per person (for denominator)
+            const totalByPerson = {};
+            allTrackerData.forEach(row => {
+                const person = (row['Worked By'] || '').toString().trim() || 'Unassigned';
+                totalByPerson[person] = (totalByPerson[person] || 0) + 1;
+            });
+            
+            // Calculate stats for people with incomplete entries
+            Object.keys(incompleteByPerson).forEach(person => {
+                const entries = incompleteByPerson[person];
+                const incidentsWithMissing = entries.length;
+                const totalMissingFields = entries.reduce((sum, entry) => sum + entry.emptyFields.length, 0);
+                const avgMissing = incidentsWithMissing > 0 ? (totalMissingFields / incidentsWithMissing).toFixed(1) : '0';
+                
+                // Find most commonly missing fields for this person
+                const fieldFrequency = {};
+                entries.forEach(entry => {
+                    entry.emptyFields.forEach(field => {
+                        fieldFrequency[field] = (fieldFrequency[field] || 0) + 1;
+                    });
+                });
+                const topMissingFields = Object.entries(fieldFrequency)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 3)
+                    .map(([field, count]) => `${field} (${count})`)
+                    .join(', ');
+                
+                summary[person] = {
+                    totalIncidents: totalByPerson[person] || incidentsWithMissing,
+                    incidentsWithMissing,
+                    totalMissingFields,
+                    avgMissing,
+                    topMissingFields
+                };
+            });
+            
+            const totalIncidentsWithIssues = Object.values(summary).reduce((sum, s) => sum + s.incidentsWithMissing, 0);
+            document.getElementById('summaryTotalCount').textContent = totalIncidentsWithIssues;
+            
+            if (totalIncidentsWithIssues === 0) {
+                container.innerHTML = '<div class="empty-state">✓ No missing fields found across all team members!</div>';
+                return;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Team Member</th>
+                            <th>Total Incidents</th>
+                            <th>Incidents with Missing Values</th>
+                            <th>Total Missing Fields</th>
+                            <th>Avg Missing/Incident</th>
+                            <th>Most Missing Fields</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            // Sort by incidents with missing values (descending)
+            Object.keys(summary).sort((a, b) => summary[b].incidentsWithMissing - summary[a].incidentsWithMissing).forEach(person => {
+                const s = summary[person];
+                const missingPercent = s.totalIncidents > 0 ? ((s.incidentsWithMissing / s.totalIncidents) * 100).toFixed(1) : '0';
+                
+                html += `
+                    <tr>
+                        <td><strong>${person}</strong></td>
+                        <td>${s.totalIncidents}</td>
+                        <td>
+                            ${s.incidentsWithMissing} 
+                            <span style="color: #6b7280; font-size: 0.85em;">(${missingPercent}%)</span>
+                        </td>
+                        <td><span class="count-badge danger">${s.totalMissingFields}</span></td>
+                        <td>${s.avgMissing}</td>
+                        <td style="font-size: 0.85em; color: #6b7280;">${s.topMissingFields || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            
+            // Add a small legend/note
+            html += `<p style="font-size: 0.8em; color: #6b7280; margin-top: 10px; font-style: italic;">
+                💡 Tip: Click the toggle above to include optional columns (Module, Close Date, etc.) in this analysis
+            </p>`;
+            
             container.innerHTML = html;
         }
 
