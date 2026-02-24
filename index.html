@@ -712,15 +712,21 @@
             // Build summary data per person
             const summary = {};
             
-            // First, count total incidents per person (for denominator)
+            // First, count total incidents per person (for denominator) - EXCLUDE Unassigned
             const totalByPerson = {};
             allTrackerData.forEach(row => {
-                const person = (row['Worked By'] || '').toString().trim() || 'Unassigned';
+                const person = (row['Worked By'] || '').toString().trim();
+                // Skip unassigned entries for summary table
+                if (!person || person.toLowerCase() === 'unassigned') return;
+                
                 totalByPerson[person] = (totalByPerson[person] || 0) + 1;
             });
             
-            // Calculate stats for people with incomplete entries
+            // Calculate stats for people with incomplete entries - EXCLUDE Unassigned
             Object.keys(incompleteByPerson).forEach(person => {
+                // Skip "Unassigned" entries entirely
+                if (!person || person.toLowerCase() === 'unassigned') return;
+                
                 const entries = incompleteByPerson[person];
                 const incidentsWithMissing = entries.length;
                 const totalMissingFields = entries.reduce((sum, entry) => sum + entry.emptyFields.length, 0);
