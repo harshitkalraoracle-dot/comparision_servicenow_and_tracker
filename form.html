@@ -459,7 +459,7 @@
 // ═══════════════════════════════════════════════════════
 //  CONFIG — replace with your deployed Apps Script URL
 // ═══════════════════════════════════════════════════════
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyrlY6LjFxjqdQYHYTVosFBHSNhJpodnshUaFCd4FZTUHEQ6aG7Pvvm59ah9awTqkhv_g/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5wzcav0NSUCXawZCazkya7OPuE-dt_RuJsa5QyM5AmE1rf-X4N3t_i735N7edNukpSQ/exec";
 
 // Field config
 const OPTIONAL_FIELDS = ['Module','Close Date','Detail Description and Solution','SAAS Support SR (if any)'];
@@ -506,18 +506,32 @@ let totalRequired = 0;
 let filledRequired = 0;
 
 // ── Parse URL ──
-function init() {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const encoded = params.get('data');
-    if (!encoded) throw new Error('No data');
+// ── Parse URL and load form ──
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const code   = params.get('code');
 
-    formData = JSON.parse(decodeURIComponent(atob(encoded)));
-    if (!formData.person || !formData.entries?.length) throw new Error('Invalid');
+  if (!code) {
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('errorScreen').style.display  = 'block';
+    return;
+  }
+
+  try {
+    const res  = await fetch(`${APPS_SCRIPT_URL}?action=fetch&code=${code.toUpperCase()}`);
+    const data = await res.json();
+
+    if (data.status !== 'ok') throw new Error(data.message || 'Code not found');
+
+    formData = data.payload;
+    formData._code = code.toUpperCase(); // keep code for submission
+    if (!formData.person || !formData.entries?.length) throw new Error('Invalid payload');
 
     renderForm();
-  } catch(e) {
+  } catch(err) {
     document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('errorScreen').querySelector('p').textContent =
+      'Could not load your form: ' + err.message + '. Please ask your manager to resend the link.';
     document.getElementById('errorScreen').style.display = 'block';
   }
 }
@@ -653,11 +667,12 @@ async function submitForm() {
   });
 
   const payload = {
-    type: 'batch',
-    person: formData.person,
-    submittedAt: new Date().toISOString(),
-    entries
-  };
+  type: 'batch',
+  person: formData.person,
+  code: formData._code,       // ← ADD THIS LINE
+  submittedAt: new Date().toISOString(),
+  entries
+};
 
   try {
     await fetch(APPS_SCRIPT_URL, {
