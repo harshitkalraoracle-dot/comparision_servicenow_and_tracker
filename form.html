@@ -173,7 +173,7 @@
 // ══════════════════════════════════════════════════════════════
 //  ⚠️  REPLACE WITH YOUR DEPLOYED APPS SCRIPT WEB APP URL
 // ══════════════════════════════════════════════════════════════
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJhA5w0_tYeK5ygal77QRQ-tQmQqFFwZELNoc6a90dillsTFYcn_LqIfFFvrDnV5-2LQ/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZBSM7QtZ_J3KcIj98q2fRWVT8e7b6K-hcIQdc5LV2PX0dDmhe90mFjOJKCR5GTyqgKw/exec";
 
 // ── Field config ───────────────────────────────────────────────
 const OPTIONAL_FIELDS = ['Module','Close Date','Detail Description and Solution','SAAS Support SR (if any)'];
@@ -291,7 +291,10 @@ function renderForm() {
           <div class="incident-sr">SR# ${entry.sr}</div>
           <div class="incident-desc">${entry.description}</div>
         </div>
-        <div class="field-count-badge">${entry.fields.length} field${entry.fields.length > 1 ? 's' : ''}</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+          <div class="field-count-badge">${entry.fields.length} field${entry.fields.length > 1 ? 's' : ''}</div>
+          ${(entry.rowCount||1) > 1 ? `<div style="font-size:.65rem;padding:3px 8px;border-radius:12px;background:#f3e8ff;color:#7c3aed;white-space:nowrap;font-weight:500;">${entry.rowCount} rows</div>` : ''}
+        </div>
       </div>
       <div class="incident-fields">${fieldRows}</div>
     </div>`;
@@ -351,7 +354,7 @@ async function submitForm() {
       const el  = document.getElementById(fid);
       if (el && el.value.trim()) fields[field] = el.value.trim();
     });
-    return { sr: entry.sr, description: entry.description, fields };
+    return { sr: entry.sr, description: entry.description, fields, rowCount: entry.rowCount || 1 };
   });
 
   const payload = {
