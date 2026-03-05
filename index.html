@@ -1239,9 +1239,16 @@ function buildFormGen(incomplete, allTr) {
     }).join('');
 }
 
-function buildShareLink(person) {
+// REMOVE the old buildShareLink function entirely, replace with this:
+async function buildShareLink(person) {
   const entries = allIncomplete[person];
-  if (!entries) return '';
+  if (!entries) return null;
+
+  const url = getAppsScriptUrl();
+  if (!url) {
+    toast('⚠️ Paste your Apps Script URL in the top bar first');
+    return null;
+  }
 
   const payload = {
     person,
@@ -1249,22 +1256,34 @@ function buildShareLink(person) {
     entries: entries.map(e => ({ sr: e.sr, description: e.description, fields: e.fields }))
   };
 
-  const encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
-  return `${GITHUB_PAGES_BASE}/form.html?data=${encoded}`;
+  try {
+    const res  = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'store', payload })
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message);
+    return `${GITHUB_PAGES_BASE}/form.html?code=${data.code}`;
+  } catch(err) {
+    toast('❌ Failed to generate link: ' + err.message);
+    return null;
+  }
 }
 
-function openPersonModal(person) {
+async function openPersonModal(person) {
   currentPerson = person;
   const entries = allIncomplete[person];
-  const totalFields = entries.reduce((s,e)=>s+e.fields.length,0);
+  const totalFields = entries.reduce((s,e) => s + e.fields.length, 0);
 
   document.getElementById('modalTitle').textContent = person;
-  document.getElementById('modalSub').textContent = `${entries.length} incomplete incident${entries.length>1?'s':''} · ${totalFields} missing fields`;
-
-  const link = buildShareLink(person);
-  document.getElementById('shareLink').value = link;
-
+  document.getElementById('modalSub').textContent =
+    `${entries.length} incomplete incident${entries.length>1?'s':''} · ${totalFields} missing fields`;
+  document.getElementById('shareLink').value = 'Generating link…';
   document.getElementById('linkModal').classList.add('open');
+
+  const link = await buildShareLink(person);
+  document.getElementById('shareLink').value = link || 'Error — check Apps Script URL';
 }
 
 function closeModal() {
@@ -1279,12 +1298,16 @@ function copyShareLink() {
   navigator.clipboard.writeText(val).then(() => toast('✓ Link copied to clipboard'));
 }
 
-function copyAllLinks() {
+async function copyAllLinks() {
   const people = Object.keys(allIncomplete).filter(p => p && p.toLowerCase() !== 'unassigned');
-  const lines = people.map(p => `${p}:\n${buildShareLink(p)}`).join('\n\n');
-  navigator.clipboard.writeText(lines).then(() => toast(`✓ ${people.length} links copied`));
+  toast(`⏳ Generating ${people.length} links…`);
+  const lines = [];
+  for (const p of people) {
+    const link = await buildShareLink(p);
+    if (link) lines.push(`${p}:\n${link}`);
+  }
+  navigator.clipboard.writeText(lines.join('\n\n')).then(() => toast(`✓ ${lines.length} links copied`));
 }
-
 // ── RESPONSES ──
 async function loadResponses() {
   const url = getAppsScriptUrl();
