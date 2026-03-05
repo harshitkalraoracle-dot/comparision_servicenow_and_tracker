@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Incident Data Form</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<!-- LZ-String compression library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 <style>
   :root {
     --ink: #1a1a2e;
@@ -27,7 +29,7 @@
   .form-status-badge { font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; padding:4px 12px; border-radius:20px; border:1px solid rgba(255,255,255,.2); color:rgba(255,255,255,.7); }
 
   .hero { background:var(--ink); padding:40px 32px 60px; color:white; position:relative; overflow:hidden; }
-  .hero::after { content:''; position:absolute; bottom:-1px;left:0;right:0; height:40px; background:var(--paper2); clip-path:ellipse(55% 100% at 50% 100%); }
+  .hero::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:40px; background:var(--paper2); clip-path:ellipse(55% 100% at 50% 100%); }
   .hero-label { font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:#a5b4fc; margin-bottom:10px; }
   .hero-name { font-family:'Instrument Serif',serif; font-size:clamp(2rem,5vw,3rem); margin-bottom:10px; line-height:1.1; }
   .hero-meta { font-size:.82rem; color:rgba(255,255,255,.5); display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
@@ -59,7 +61,8 @@
   input[type="text"], input[type="date"], textarea, select {
     font-family:'DM Sans',sans-serif; font-size:.85rem; color:var(--ink);
     background:var(--paper); border:1.5px solid var(--rule); border-radius:7px;
-    padding:10px 13px; width:100%; outline:none; transition:border-color .2s,box-shadow .2s;
+    padding:10px 13px; width:100%; outline:none;
+    transition:border-color .2s, box-shadow .2s;
     appearance:none; -webkit-appearance:none;
   }
   input:focus, textarea:focus, select:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(79,70,229,.1); background:white; }
@@ -71,7 +74,7 @@
 
   .notice { background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:12px 16px; font-size:.78rem; color:#92400e; margin-bottom:20px; display:flex; gap:8px; align-items:flex-start; }
 
-  .sticky-footer { position:fixed; bottom:0;left:0;right:0; background:white; border-top:1px solid var(--rule); padding:14px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; z-index:100; box-shadow:0 -4px 20px rgba(0,0,0,.06); }
+  .sticky-footer { position:fixed; bottom:0; left:0; right:0; background:white; border-top:1px solid var(--rule); padding:14px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; z-index:100; box-shadow:0 -4px 20px rgba(0,0,0,.06); }
   .footer-status { font-size:.8rem; color:var(--ink-soft); }
   .footer-status strong { color:var(--ink); }
   .btn-submit { font-family:'DM Sans',sans-serif; font-size:.88rem; font-weight:600; background:var(--accent); color:white; border:none; padding:12px 28px; border-radius:8px; cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:8px; }
@@ -79,7 +82,7 @@
   .btn-submit:disabled { background:#d1d5db; cursor:not-allowed; transform:none; box-shadow:none; }
 
   .success-screen { display:none; max-width:520px; margin:60px auto; padding:0 24px; text-align:center; }
-  .success-icon { width:72px;height:72px; background:#d1fae5; border-radius:50%; display:flex;align-items:center;justify-content:center; font-size:2rem; margin:0 auto 24px; animation:popIn .4s cubic-bezier(.34,1.56,.64,1); }
+  .success-icon { width:72px; height:72px; background:#d1fae5; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 24px; animation:popIn .4s cubic-bezier(.34,1.56,.64,1); }
   @keyframes popIn { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
   .success-title { font-family:'Instrument Serif',serif; font-size:2rem; margin-bottom:10px; }
   .success-sub { font-size:.88rem; color:var(--ink-soft); line-height:1.6; }
@@ -87,8 +90,8 @@
   .loading-screen, .error-screen { max-width:520px; margin:80px auto; padding:40px 24px; text-align:center; }
   .error-screen h2 { font-family:'Instrument Serif',serif; font-size:1.8rem; margin-bottom:10px; }
   .error-screen p { color:var(--ink-soft); font-size:.88rem; line-height:1.6; }
-  .error-detail { margin-top:12px; font-size:.75rem; color:var(--danger); background:#fef2f2; border:1px solid #fecaca; border-radius:6px; padding:10px 14px; text-align:left; font-family:monospace; }
-  .spinner { width:36px;height:36px; border:3px solid var(--rule); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 16px; }
+  .error-detail { margin-top:12px; font-size:.75rem; color:var(--danger); background:#fef2f2; border:1px solid #fecaca; border-radius:6px; padding:10px 14px; text-align:left; font-family:monospace; word-break:break-all; }
+  .spinner { width:36px; height:36px; border:3px solid var(--rule); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 16px; }
   @keyframes spin { to{transform:rotate(360deg)} }
 
   @media (max-width:600px) {
@@ -108,17 +111,20 @@
   <div class="form-status-badge" id="topBadge">Loading…</div>
 </div>
 
+<!-- Loading -->
 <div class="loading-screen" id="loadingScreen">
   <div class="spinner"></div>
   <p style="color:#4a4a6a;font-size:.88rem;">Loading your form…</p>
 </div>
 
+<!-- Error -->
 <div class="error-screen" id="errorScreen" style="display:none;">
   <h2>Could Not Load Form</h2>
-  <p id="errorMsg">Please ask your manager to resend the link.</p>
+  <p id="errorMsg">This link appears to be invalid or expired. Please ask your manager to resend your form link.</p>
   <div class="error-detail" id="errorDetail" style="display:none;"></div>
 </div>
 
+<!-- Main form -->
 <div id="mainContent" style="display:none;">
   <div class="hero">
     <div class="hero-label">Data Collection Request</div>
@@ -148,12 +154,14 @@
   </div>
 </div>
 
+<!-- Success -->
 <div class="success-screen" id="successScreen">
   <div class="success-icon">✓</div>
   <div class="success-title">All done!</div>
   <p class="success-sub" id="successSub"></p>
 </div>
 
+<!-- Sticky footer -->
 <div class="sticky-footer" id="stickyFooter" style="display:none;">
   <div class="footer-status">
     <strong id="footerFilled">0</strong> of <strong id="footerTotal">0</strong> required fields filled
@@ -163,11 +171,11 @@
 
 <script>
 // ══════════════════════════════════════════════════════════════
-//  ⚠️  REPLACE THIS WITH YOUR DEPLOYED APPS SCRIPT URL
+//  ⚠️  REPLACE WITH YOUR DEPLOYED APPS SCRIPT WEB APP URL
 // ══════════════════════════════════════════════════════════════
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-o9D9D5mdYiwG_ovl4zwuCU5EkTfCDlFzmTAZBUUp1om_XhDuN_AUpPd9NwR5ZG9xBg/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJhA5w0_tYeK5ygal77QRQ-tQmQqFFwZELNoc6a90dillsTFYcn_LqIfFFvrDnV5-2LQ/exec";
 
-// ── Field config ──────────────────────────────────────────────
+// ── Field config ───────────────────────────────────────────────
 const OPTIONAL_FIELDS = ['Module','Close Date','Detail Description and Solution','SAAS Support SR (if any)'];
 
 const FIELD_CONFIG = {
@@ -194,83 +202,62 @@ const FIELD_CONFIG = {
 
 const WIDE_FIELDS = ['Comments','Description','Detail Description and Solution','SAAS Support SR (if any)','CSU','Requested By','Current Owner'];
 
-// ── State ─────────────────────────────────────────────────────
+// ── State ──────────────────────────────────────────────────────
 let formData      = null;
 let totalRequired = 0;
 
-// ── Init ──────────────────────────────────────────────────────
-async function init() {
-  const params = new URLSearchParams(window.location.search);
-  const code   = (params.get('code') || '').trim().toUpperCase();
-
-  if (!code) {
-    showError('Invalid link — no form code found in the URL.', 'Expected URL format: form.html?code=XXXXXX');
-    return;
-  }
-
+// ── Init — decompress payload from URL ────────────────────────
+function init() {
   try {
-    const url = `${APPS_SCRIPT_URL}?action=fetch&code=${code}`;
-    const res  = await fetch(url);
+    const params      = new URLSearchParams(window.location.search);
+    const compressed  = params.get('d'); // 'd' = compressed data param
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    if (!compressed) throw new Error('No data parameter found in URL');
 
-    const json = await res.json();
+    // Decompress using LZ-String
+    const jsonStr = LZString.decompressFromEncodedURIComponent(compressed);
+    if (!jsonStr) throw new Error('Decompression failed — link may be corrupted or truncated');
 
-    if (json.status !== 'ok') {
-      throw new Error(json.message || 'Server returned an error');
-    }
-
-    formData        = json.payload;
-    formData._code  = code;
-
+    formData = JSON.parse(jsonStr);
     if (!formData.person || !Array.isArray(formData.entries) || !formData.entries.length) {
-      throw new Error('Payload is missing person or entries data');
+      throw new Error('Invalid payload structure');
     }
 
     renderForm();
 
   } catch(err) {
-    showError(
-      'Could not load your form. Please ask your manager to resend the link.',
-      err.message
-    );
-  }
-}
-
-function showError(msg, detail) {
-  document.getElementById('loadingScreen').style.display = 'none';
-  document.getElementById('errorScreen').style.display   = 'block';
-  document.getElementById('errorMsg').textContent = msg;
-  if (detail) {
-    document.getElementById('errorDetail').textContent = detail;
+    document.getElementById('loadingScreen').style.display = 'none';
+    document.getElementById('errorScreen').style.display   = 'block';
+    document.getElementById('errorMsg').textContent =
+      'Could not load your form. Please ask your manager to resend the link.';
+    document.getElementById('errorDetail').textContent = 'Error: ' + err.message;
     document.getElementById('errorDetail').style.display = 'block';
   }
 }
 
-// ── Render form ───────────────────────────────────────────────
+// ── Render form ────────────────────────────────────────────────
 function renderForm() {
-  document.getElementById('heroName').textContent     = formData.person;
+  document.getElementById('heroName').textContent      = formData.person;
   document.getElementById('metaIncidents').textContent = formData.entries.length;
   document.getElementById('metaDate').textContent      = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
 
-  // Count required fields
   totalRequired = 0;
   formData.entries.forEach(entry => {
     entry.fields.forEach(f => { if (!OPTIONAL_FIELDS.includes(f)) totalRequired++; });
   });
 
   const totalAll = formData.entries.reduce((s,e) => s + e.fields.length, 0);
-  document.getElementById('metaFields').textContent   = totalAll;
+  document.getElementById('metaFields').textContent    = totalAll;
   document.getElementById('progressTotal').textContent = totalRequired;
   document.getElementById('footerTotal').textContent   = totalRequired;
 
   const container = document.getElementById('formContainer');
   container.innerHTML = formData.entries.map((entry, ei) => {
     const fieldRows = entry.fields.map(field => {
-      const cfg   = FIELD_CONFIG[field] || { type:'text' };
-      const isOpt = OPTIONAL_FIELDS.includes(field);
+      const cfg    = FIELD_CONFIG[field] || { type:'text' };
+      const isOpt  = OPTIONAL_FIELDS.includes(field);
       const isWide = WIDE_FIELDS.includes(field) || cfg.type === 'textarea';
-      const fid   = `f_${ei}_${field.replace(/\W+/g,'_')}`;
+      const fid    = `f_${ei}_${field.replace(/\W+/g,'_')}`;
 
       let inputHtml = '';
       if (cfg.type === 'select') {
@@ -317,20 +304,18 @@ function renderForm() {
   updateProgress();
 }
 
-// ── Field change handler ──────────────────────────────────────
+// ── Field change ───────────────────────────────────────────────
 function onFieldChange(el) {
   el.classList.toggle('filled-field', el.value.trim().length > 0);
-  const card = document.getElementById(`card_${el.dataset.ei}`);
-  const allReq = card.querySelectorAll('[data-required="true"]');
+  const card    = document.getElementById(`card_${el.dataset.ei}`);
+  const allReq  = card.querySelectorAll('[data-required="true"]');
   card.classList.toggle('filled', Array.from(allReq).every(i => i.value.trim()));
   updateProgress();
 }
 
 function updateProgress() {
   let filled = 0;
-  document.querySelectorAll('[data-required="true"]').forEach(el => {
-    if (el.value.trim()) filled++;
-  });
+  document.querySelectorAll('[data-required="true"]').forEach(el => { if (el.value.trim()) filled++; });
   const pct = totalRequired > 0 ? Math.round((filled / totalRequired) * 100) : 0;
   document.getElementById('progressFill').style.width  = pct + '%';
   document.getElementById('progressDone').textContent  = filled;
@@ -338,7 +323,7 @@ function updateProgress() {
   document.getElementById('submitBtn').disabled = (filled < totalRequired);
 }
 
-// ── Submit ────────────────────────────────────────────────────
+// ── Submit ─────────────────────────────────────────────────────
 async function submitForm() {
   const btn = document.getElementById('submitBtn');
 
@@ -358,7 +343,7 @@ async function submitForm() {
   btn.disabled    = true;
   btn.textContent = 'Submitting…';
 
-  // Collect all filled values
+  // Collect filled values
   const entries = formData.entries.map((entry, ei) => {
     const fields = {};
     entry.fields.forEach(field => {
@@ -372,7 +357,6 @@ async function submitForm() {
   const payload = {
     type:        'batch',
     person:      formData.person,
-    code:        formData._code || '',
     submittedAt: new Date().toISOString(),
     entries
   };
@@ -381,13 +365,11 @@ async function submitForm() {
     const encoded   = encodeURIComponent(JSON.stringify(payload));
     const submitUrl = `${APPS_SCRIPT_URL}?action=submit&data=${encoded}`;
     const res       = await fetch(submitUrl);
-
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-
     const result = await res.json();
     if (result.status !== 'ok') throw new Error(result.message || 'Submission failed');
 
-    // Show success
+    // Show success screen
     document.getElementById('mainContent').style.display   = 'none';
     document.getElementById('stickyFooter').style.display  = 'none';
     document.getElementById('successScreen').style.display = 'block';
@@ -402,7 +384,7 @@ async function submitForm() {
   }
 }
 
-// ── Start ─────────────────────────────────────────────────────
+// ── Start ──────────────────────────────────────────────────────
 init();
 </script>
 </body>
