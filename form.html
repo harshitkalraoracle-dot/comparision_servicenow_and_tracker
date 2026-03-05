@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Incident Data Form</title>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
 <!-- LZ-String compression library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 <style>
@@ -176,7 +176,7 @@
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZBSM7QtZ_J3KcIj98q2fRWVT8e7b6K-hcIQdc5LV2PX0dDmhe90mFjOJKCR5GTyqgKw/exec";
 
 // ── Field config ───────────────────────────────────────────────
-const OPTIONAL_FIELDS = ['Module','Close Date','Detail Description and Solution','SAAS Support SR (if any)'];
+const OPTIONAL_FIELDS = ['Module','Close Date','Detail Description and Solution','SAAS Support SR (if any)', 'Current Owner'];
 
 const FIELD_CONFIG = {
   'SR Open Date':    { type:'date' },
@@ -200,7 +200,7 @@ const FIELD_CONFIG = {
   'SAAS Support SR (if any)': { type:'text', placeholder:'e.g. SR123456 or N/A' },
 };
 
-const WIDE_FIELDS = ['Comments','Description','Detail Description and Solution','SAAS Support SR (if any)','CSU','Requested By'];
+const WIDE_FIELDS = ['Comments','Description','Detail Description and Solution','SAAS Support SR (if any)','CSU','Requested By','Current Owner'];
 
 // ── State ──────────────────────────────────────────────────────
 let formData      = null;
