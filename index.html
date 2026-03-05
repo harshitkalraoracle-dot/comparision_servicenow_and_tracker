@@ -457,14 +457,33 @@ function analyze() {
   });
 
   const cols = checkOpt ? [...REQUIRED,...OPTIONAL] : [...REQUIRED];
-  allIncomplete = {};
+
+  // Build per-person, per-SR map — deduplicate rows with same SR# & person
+  const rawIncomplete = {};
   trData.forEach(r => {
     const person = (r['Worked By']||'').trim() || 'Unassigned';
+    const sr     = (r['SR#']||'').trim() || 'N/A';
     const empty  = cols.filter(f => !(r[f]||'').trim());
-    if (empty.length) {
-      if (!allIncomplete[person]) allIncomplete[person] = [];
-      allIncomplete[person].push({ sr:r['SR#']||'N/A', fields:empty, description:r['Description']||'N/A' });
+    if (!empty.length) return;
+    if (!rawIncomplete[person]) rawIncomplete[person] = {};
+    if (!rawIncomplete[person][sr]) {
+      rawIncomplete[person][sr] = { fields: empty, description: r['Description']||'N/A', rowCount: 1 };
+    } else {
+      // Same SR# for same person — merge missing fields and count duplicate rows
+      rawIncomplete[person][sr].rowCount++;
+      empty.forEach(f => { if (!rawIncomplete[person][sr].fields.includes(f)) rawIncomplete[person][sr].fields.push(f); });
     }
+  });
+
+  // Convert to array format used throughout
+  allIncomplete = {};
+  Object.keys(rawIncomplete).forEach(person => {
+    allIncomplete[person] = Object.keys(rawIncomplete[person]).map(sr => ({
+      sr,
+      fields:      rawIncomplete[person][sr].fields,
+      description: rawIncomplete[person][sr].description,
+      rowCount:    rawIncomplete[person][sr].rowCount
+    }));
   });
 
   const srOcc = {};
@@ -566,14 +585,31 @@ function renderDetailed(incomplete){
   if(!all){c.innerHTML=empty('All entries are complete');return;}
   c.innerHTML=Object.keys(incomplete).sort().map(person=>{
     const entries=incomplete[person];
+    const totalRows=entries.reduce((s,e)=>s+(e.rowCount||1),0);
+    const dupCount=entries.filter(e=>(e.rowCount||1)>1).length;
     return `<div class="person-block">
-      <div class="person-head"><div class="person-head-name">${person}</div><span class="pill pill-blue">${entries.length} incomplete</span></div>
+      <div class="person-head">
+        <div class="person-head-name">${person}</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          ${dupCount>0?`<span class="pill pill-purple" title="${dupCount} SR(s) span multiple rows — form will fill all rows at once">⚠ ${dupCount} multi-row SR${dupCount>1?'s':''}</span>`:''}
+          <span class="pill pill-blue">${entries.length} unique SR${entries.length>1?'s':''} · ${totalRows} total rows</span>
+        </div>
+      </div>
       <div style="padding:12px 16px;">
-      <table><thead><tr><th style="width:14%">SR#</th><th style="width:46%">Missing Fields</th><th>Description</th></tr></thead><tbody>
-        ${entries.map(e=>`<tr><td><strong>${e.sr}</strong></td>
+      <table><thead><tr><th style="width:12%">SR#</th><th style="width:8%">Rows</th><th style="width:42%">Missing Fields</th><th>Description</th></tr></thead><tbody>
+        ${entries.map(e=>`<tr>
+          <td><strong>${e.sr}</strong></td>
+          <td style="text-align:center;">${(e.rowCount||1)>1
+            ? `<span style="color:var(--purple);font-weight:600;">${e.rowCount}</span><span style="color:var(--text-dim);font-size:.7em;"> rows</span>`
+            : `<span style="color:var(--text-dim);">1</span>`}
+          </td>
           <td>${e.fields.map(f=>`<span class="tag">${f}</span>`).join('')}</td>
           <td style="color:var(--text-dim);font-size:.75em;">${e.description}</td></tr>`).join('')}
-      </tbody></table></div></div>`;
+      </tbody></table>
+      ${dupCount>0?`<div style="margin-top:10px;font-size:.72rem;color:var(--purple);background:rgba(192,132,252,.06);border:1px solid rgba(192,132,252,.15);border-radius:6px;padding:8px 12px;">
+        ℹ️ When this person submits the form, their data will be applied to <strong>all rows</strong> of each multi-row SR# automatically.
+      </div>`:''}
+      </div></div>`;
   }).join('');
 }
 
@@ -631,7 +667,7 @@ function buildLink(person, entries) {
   const payload = {
     person,
     generatedAt: new Date().toISOString(),
-    entries: entries.map(e => ({ sr: e.sr, description: e.description, fields: e.fields }))
+    entries: entries.map(e => ({ sr: e.sr, description: e.description, fields: e.fields, rowCount: e.rowCount || 1 }))
   };
   try {
     const json       = JSON.stringify(payload);
