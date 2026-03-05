@@ -459,7 +459,7 @@
 // ═══════════════════════════════════════════════════════
 //  CONFIG — replace with your deployed Apps Script URL
 // ═══════════════════════════════════════════════════════
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5wzcav0NSUCXawZCazkya7OPuE-dt_RuJsa5QyM5AmE1rf-X4N3t_i735N7edNukpSQ/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby43UQTVYfj2OYsQrgLzjMe6nkLyDPO4fg_R8nRRovjn-8aGYrtT8_YHdHQghQiFecn/exec";
 
 // Field config
 const OPTIONAL_FIELDS = ['Module','Close Date','Detail Description and Solution','SAAS Support SR (if any)'];
@@ -638,7 +638,7 @@ function updateProgress() {
 async function submitForm() {
   const btn = document.getElementById('submitBtn');
 
-  // Validate
+  // Validate — find first empty required field
   let firstEmpty = null;
   document.querySelectorAll('[data-required="true"]').forEach(el => {
     if (!el.value.trim() && !firstEmpty) firstEmpty = el;
@@ -655,45 +655,46 @@ async function submitForm() {
   btn.disabled = true;
   btn.textContent = 'Submitting…';
 
-  // Collect data
+  // Collect filled values
   const entries = formData.entries.map((entry, ei) => {
     const fields = {};
     entry.fields.forEach(field => {
       const fid = `f_${ei}_${field.replace(/\W+/g,'_')}`;
-      const el = document.getElementById(fid);
+      const el  = document.getElementById(fid);
       if (el && el.value.trim()) fields[field] = el.value.trim();
     });
     return { sr: entry.sr, description: entry.description, fields };
   });
 
   const payload = {
-  type: 'batch',
-  person: formData.person,
-  code: formData._code,       // ← ADD THIS LINE
-  submittedAt: new Date().toISOString(),
-  entries
-};
+    type: 'batch',
+    person: formData.person,
+    code: formData._code || '',
+    submittedAt: new Date().toISOString(),
+    entries
+  };
 
   try {
-    await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    // Use GET + encoded data to avoid CORS issues
+    const encoded   = encodeURIComponent(JSON.stringify(payload));
+    const submitUrl = `${APPS_SCRIPT_URL}?action=submit&data=${encoded}`;
 
-    // Show success (no-cors means we can't read response, assume success)
-    document.getElementById('mainContent').style.display = 'none';
+    const res    = await fetch(submitUrl);
+    const result = await res.json();
+    if (result.status !== 'ok') throw new Error(result.message || 'Unknown error');
+
+    // Show success screen
+    document.getElementById('mainContent').style.display  = 'none';
     document.getElementById('stickyFooter').style.display = 'none';
     document.getElementById('successScreen').style.display = 'block';
     document.getElementById('successSub').textContent =
-      `Your data for ${entries.length} incident${entries.length>1?'s':''} has been submitted to the tracker. Your manager will review and update the sheet. You can close this tab.`;
+      `Your data for ${entries.length} incident${entries.length > 1 ? 's' : ''} has been submitted. Your manager will review and update the tracker. You can close this tab.`;
     document.getElementById('topBadge').textContent = 'Submitted ✓';
 
   } catch(err) {
     btn.disabled = false;
     btn.textContent = 'Submit Data →';
-    alert('Submission failed. Please check your internet connection and try again.\n\nError: ' + err.message);
+    alert('Submission failed: ' + err.message + '\n\nPlease check your internet connection and try again.');
   }
 }
 
