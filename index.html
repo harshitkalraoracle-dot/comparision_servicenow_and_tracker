@@ -240,7 +240,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
     <div class="controls-bar">
       <div class="toggle-row" onclick="toggleOpt()">
         <div class="toggle-track" id="togTrack"><div class="toggle-thumb"></div></div>
-        <span class="toggle-label">Include optional columns: <em>Module, Close Date, Detail Description &amp; Solution, SAAS Support SR</em></span>
+        <span class="toggle-label">Include optional columns: <em>Module, Close Date, Detail Description &amp; Solution, SAAS Support SR, Current Owner</em></span>
       </div>
       <button class="btn btn-primary" id="analyzeBtn" onclick="runAnalysis()" disabled>🔍 Analyze</button>
     </div>
@@ -359,7 +359,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
 const GITHUB_PAGES_BASE = "https://harshitkalraoracle-dot.github.io/comparision_servicenow_and_tracker";
 
 const REQUIRED = ['SR#','SR Open Date','Assignment Date','Incident Category','Type','CSU','Priority','Severity','Description','Requested By','Worked By','Status','Current Owner','Comments'];
-const OPTIONAL = ['Module','Close Date','Detail Description and Solution','SAAS Support SR (if any)'];
+const OPTIONAL = ['Module','Close Date','Detail Description and Solution','SAAS Support SR (if any)','Current Owner'];
 const AVATAR_COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ef4444','#06b6d4'];
 const URL_MAX = 8000; // safe browser URL limit
 
