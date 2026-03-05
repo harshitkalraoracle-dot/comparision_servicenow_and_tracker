@@ -1239,7 +1239,6 @@ function buildFormGen(incomplete, allTr) {
     }).join('');
 }
 
-// REMOVE the old buildShareLink function entirely, replace with this:
 async function buildShareLink(person) {
   const entries = allIncomplete[person];
   if (!entries) return null;
@@ -1257,16 +1256,15 @@ async function buildShareLink(person) {
   };
 
   try {
-    const res  = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'store', payload })
-    });
-    const data = await res.json();
-    if (data.status !== 'ok') throw new Error(data.message);
+    // Use GET + encoded payload to avoid CORS issues
+    const encoded  = encodeURIComponent(JSON.stringify(payload));
+    const storeUrl = `${url}?action=store&payload=${encoded}`;
+    const res      = await fetch(storeUrl);
+    const data     = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message || 'Unknown error');
     return `${GITHUB_PAGES_BASE}/form.html?code=${data.code}`;
   } catch(err) {
-    toast('❌ Failed to generate link: ' + err.message);
+    toast('❌ ' + err.message);
     return null;
   }
 }
