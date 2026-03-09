@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Incident Tracker — Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
-<!-- LZ-String compression library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 <style>
 :root {
@@ -47,9 +46,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .upload-card.sn .upload-chip{color:var(--accent2);}
 .upload-card.tr .upload-chip{color:#f9a8d4;}
 .upload-card h3{font-size:.9rem;font-weight:600;margin-bottom:14px;}
-.drop-zone{border:1.5px dashed var(--border2);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;position:relative;}
+.drop-zone{border:1.5px dashed var(--border2);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;position:relative;display:block;}
 .drop-zone:hover{border-color:var(--accent);background:rgba(99,102,241,.04);}
-.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
 .drop-icon{font-size:1.6rem;margin-bottom:6px;}
 .drop-text{font-size:.78rem;color:var(--text-dim);}
 .drop-fname{font-size:.72rem;color:var(--success);margin-top:8px;display:none;font-family:'DM Mono',monospace;}
@@ -76,7 +74,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .formgen-panel{background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(192,132,252,.05));border:1px solid rgba(99,102,241,.2);border-radius:12px;padding:24px;margin-bottom:28px;}
 .formgen-panel h2{font-family:'Instrument Serif',serif;font-size:1.2rem;font-weight:400;margin-bottom:4px;}
 .formgen-panel p{font-size:.78rem;color:var(--text-dim);margin-bottom:20px;}
-/* Compression info badge */
 .compress-info{display:inline-flex;align-items:center;gap:6px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);border-radius:6px;padding:5px 10px;font-size:.7rem;color:var(--success);margin-bottom:16px;}
 .person-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px;}
 .person-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all .2s;text-align:center;}
@@ -137,7 +134,6 @@ tr:hover td{background:rgba(255,255,255,.015);}
 .share-link-input{flex:1;font-family:'DM Mono',monospace;font-size:.7rem;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:9px 12px;color:var(--accent2);outline:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .btn-copy-link{font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;background:rgba(99,102,241,.15);color:var(--accent2);border:1px solid rgba(99,102,241,.25);padding:8px 14px;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .btn-copy-link:hover{background:rgba(99,102,241,.25);}
-/* URL size indicator */
 .url-size-bar{margin-top:10px;}
 .url-size-label{font-size:.65rem;color:var(--text-dim);display:flex;justify-content:space-between;margin-bottom:4px;}
 .url-size-track{height:4px;background:var(--border2);border-radius:2px;overflow:hidden;}
@@ -161,546 +157,365 @@ tr:hover td{background:rgba(255,255,255,.015);}
 </head>
 <body>
 <div class="layout">
-<!-- SIDEBAR -->
 <aside class="sidebar">
-<div class="sidebar-logo">
-<div class="logo-text">Incident<br>Tracker</div>
-<div class="logo-sub" style="margin-top:4px;">Admin Console</div>
-</div>
-<nav>
-<div class="nav-item active" id="nav-analyze" onclick="showPage('analyze')"><span class="nav-icon">🔍</span>Analyze</div>
-<div class="nav-item" id="nav-responses" onclick="showPage('responses')"><span class="nav-icon">📥</span>Responses</div>
-<div class="nav-item" id="nav-setup" onclick="showPage('setup')"><span class="nav-icon">⚙️</span>Setup Guide</div>
-</nav>
-<div class="sidebar-footer">GitHub Pages · LZ-String</div>
+  <div class="sidebar-logo">
+    <div class="logo-text">Incident<br>Tracker</div>
+    <div class="logo-sub" style="margin-top:4px;">Admin Console</div>
+  </div>
+  <nav>
+    <div class="nav-item active" id="nav-analyze" onclick="showPage('analyze')"><span class="nav-icon">🔍</span>Analyze</div>
+    <div class="nav-item" id="nav-responses" onclick="showPage('responses')"><span class="nav-icon">📥</span>Responses</div>
+    <div class="nav-item" id="nav-setup" onclick="showPage('setup')"><span class="nav-icon">⚙️</span>Setup Guide</div>
+  </nav>
+  <div class="sidebar-footer">GitHub Pages · LZ-String</div>
 </aside>
-<!-- MAIN -->
 <div class="main">
-<div class="topbar">
-<div class="topbar-title" id="pageTitle">Analyze Sheets</div>
-<div class="topbar-right">
-<div class="config-url-wrap">
-<div class="config-url-label">Apps Script URL</div>
-<input class="config-url-input" id="appsScriptUrl" type="text"
-placeholder="Paste your deployed Web App URL…" oninput="saveConfig()">
+  <div class="topbar">
+    <div class="topbar-title" id="pageTitle">Analyze Sheets</div>
+    <div class="topbar-right">
+      <div class="config-url-wrap">
+        <div class="config-url-label">Apps Script URL</div>
+        <input class="config-url-input" id="appsScriptUrl" type="text"
+          placeholder="Paste your deployed Web App URL…" oninput="saveConfig()">
+      </div>
+      <div class="badge-admin">Admin</div>
+    </div>
+  </div>
+
+  <!-- PAGE: ANALYZE -->
+  <div class="page active" id="page-analyze">
+    <div class="upload-grid">
+      <div class="upload-card sn">
+        <div class="upload-chip">Source of Truth</div>
+        <h3>ServiceNow Sheet</h3>
+        <label class="drop-zone" id="dropSN"
+          ondragover="onDragOver(event,'dropSN')"
+          ondragleave="onDragLeave('dropSN')"
+          ondrop="onDrop(event,'sn','dropSN')">
+          <input type="file" accept=".xlsx" id="inputSN" style="display:none" onchange="handleFile('sn',this)">
+          <div class="drop-icon">📋</div>
+          <div class="drop-text">Drop .xlsx or click to browse</div>
+          <div class="drop-fname" id="snName"></div>
+        </label>
+      </div>
+      <div class="upload-card tr">
+        <div class="upload-chip">Team Updates</div>
+        <h3>Tracker Sheet</h3>
+        <label class="drop-zone" id="dropTR"
+          ondragover="onDragOver(event,'dropTR')"
+          ondragleave="onDragLeave('dropTR')"
+          ondrop="onDrop(event,'tr','dropTR')">
+          <input type="file" accept=".xlsx" id="inputTR" style="display:none" onchange="handleFile('tr',this)">
+          <div class="drop-icon">📝</div>
+          <div class="drop-text">Drop .xlsx or click to browse</div>
+          <div class="drop-fname" id="trName"></div>
+        </label>
+      </div>
+    </div>
+    <div class="controls-bar">
+      <div class="toggle-row" onclick="toggleOpt()">
+        <div class="toggle-track" id="togTrack"><div class="toggle-thumb"></div></div>
+        <span class="toggle-label">Include optional columns: <em>Module, Close Date, Detail Description &amp; Solution, SAAS Support SR, Current Owner</em></span>
+      </div>
+      <button class="btn btn-primary" id="analyzeBtn" onclick="runAnalysis()" disabled>🔍 Analyze</button>
+    </div>
+    <div id="results" style="display:none;">
+      <div class="stats-grid">
+        <div class="stat"><div class="stat-n" id="sn1" style="color:var(--danger)">0</div><div class="stat-l">Missing in Tracker</div></div>
+        <div class="stat"><div class="stat-n" id="sn2" style="color:var(--warning)">0</div><div class="stat-l">Tracker Only</div></div>
+        <div class="stat"><div class="stat-n" id="sn3" style="color:var(--warning)">0</div><div class="stat-l">Priority Mismatches</div></div>
+        <div class="stat"><div class="stat-n" id="sn4" style="color:#60a5fa">0</div><div class="stat-l">Incomplete Entries</div></div>
+        <div class="stat"><div class="stat-n" id="sn5" style="color:var(--purple)">0</div><div class="stat-l">Duplicates</div></div>
+      </div>
+      <div class="formgen-panel" id="formgenPanel" style="display:none;">
+        <h2>📤 Send Data Collection Forms</h2>
+        <div class="compress-info">⚡ LZ-String compressed links — works for any number of fields, no backend needed</div>
+        <p>Click a team member to instantly generate their compressed link.</p>
+        <div class="person-cards" id="personCards"></div>
+        <div class="formgen-actions">
+          <button class="btn btn-outline" onclick="copyAllLinks()">📋 Copy All Links</button>
+          <button class="btn btn-success" onclick="showPage('responses')">📥 View Responses →</button>
+        </div>
+      </div>
+      <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-red"></div>Missing in Tracker<span class="pill pill-red" id="c1">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t1"></div></div></div>
+      <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-yellow"></div>In Tracker Only (Not in ServiceNow)<span class="pill pill-yellow" id="c2">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t2"></div></div></div>
+      <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-yellow"></div>Priority Mismatches<span class="pill pill-yellow" id="c3">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t3"></div></div></div>
+      <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-blue"></div>Missing Fields Summary by Team Member<span class="pill pill-blue" id="c4">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body open"><div id="t4"></div></div></div>
+      <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-blue"></div>Incomplete Entries — Detailed<span class="pill pill-blue" id="c5">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t5"></div></div></div>
+      <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-purple"></div>Duplicate Entries<span class="pill pill-purple" id="c6">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t6"></div></div></div>
+    </div>
+  </div>
+
+  <!-- PAGE: RESPONSES -->
+  <div class="page" id="page-responses">
+    <div class="responses-toolbar">
+      <div>
+        <div class="response-count" id="respCount">0</div>
+        <div class="response-label">Total Responses Received</div>
+      </div>
+      <button class="btn btn-outline" onclick="loadResponses()">↻ Refresh</button>
+      <button class="btn btn-success" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+    <div id="responsesTable"><div class="empty"><div class="ck">📥</div>Click Refresh to load responses from Google Sheets</div></div>
+  </div>
+
+  <!-- PAGE: SETUP -->
+  <div class="page" id="page-setup">
+    <div class="setup-card">
+      <h2 style="font-family:'Instrument Serif',serif;font-size:1.5rem;font-weight:400;margin-bottom:6px;">Setup Guide</h2>
+      <p style="color:var(--text-dim);font-size:.8rem;margin-bottom:28px;">LZ-String compression — links are self-contained.</p>
+      <div class="setup-step"><div class="step-num">1</div><div class="step-content"><h3>Create a Google Sheet</h3><p>Go to <a href="https://sheets.google.com" target="_blank" style="color:var(--accent2)">sheets.google.com</a> → name it <code>Incident Tracker Responses</code>.</p></div></div>
+      <div class="setup-step"><div class="step-num">2</div><div class="step-content"><h3>Open Apps Script</h3><p><strong>Extensions → Apps Script</strong> → paste <code>Code.gs</code> → Save.</p></div></div>
+      <div class="setup-step"><div class="step-num">3</div><div class="step-content"><h3>Deploy as Web App</h3><p>Execute as: <code>Me</code> · Access: <code>Anyone</code> → Deploy → Copy URL.</p><div class="url-display">https://script.google.com/macros/s/AKfycb.../exec</div></div></div>
+      <div class="setup-step"><div class="step-num">4</div><div class="step-content"><h3>Update form.html</h3><p>Find <code>const APPS_SCRIPT_URL = "..."</code> → paste your Web App URL.</p></div></div>
+      <div class="setup-step"><div class="step-num">5</div><div class="step-content"><h3>Update index.html</h3><p>Find <code>const GITHUB_PAGES_BASE = "..."</code> → paste your GitHub Pages URL.</p></div></div>
+      <div class="setup-step"><div class="step-num">6</div><div class="step-content"><h3>Push to GitHub &amp; enable Pages</h3><p><strong>Settings → Pages → Source: main / root</strong> → Save.</p></div></div>
+      <div class="setup-step"><div class="step-num">7</div><div class="step-content"><h3>Paste Apps Script URL in topbar</h3><p>Used only for the Responses tab to read back submissions.</p></div></div>
+      <div class="setup-step"><div class="step-num">8</div><div class="step-content"><h3>Daily workflow</h3><p>Upload both Excel files → Analyze → Click team member → Copy link → Send → Responses tab → Export CSV.</p></div></div>
+    </div>
+  </div>
 </div>
-<div class="badge-admin">Admin</div>
 </div>
-</div>
-<!-- PAGE: ANALYZE -->
-<div class="page active" id="page-analyze">
-<div class="upload-grid">
-<div class="upload-card sn">
-<div class="upload-chip">Source of Truth</div>
-<h3>ServiceNow Sheet</h3>
-<div class="drop-zone">
-<input type="file" accept=".xlsx" onchange="handleFile('sn',this)">
-<div class="drop-icon">📋</div>
-<div class="drop-text">Drop .xlsx or click to browse</div>
-<div class="drop-fname" id="snName"></div>
-</div>
-</div>
-<div class="upload-card tr">
-<div class="upload-chip">Team Updates</div>
-<h3>Tracker Sheet</h3>
-<div class="drop-zone">
-<input type="file" accept=".xlsx" onchange="handleFile('tr',this)">
-<div class="drop-icon">📝</div>
-<div class="drop-text">Drop .xlsx or click to browse</div>
-<div class="drop-fname" id="trName"></div>
-</div>
-</div>
-</div>
-<div class="controls-bar">
-<div class="toggle-row" onclick="toggleOpt()">
-<div class="toggle-track" id="togTrack"><div class="toggle-thumb"></div></div>
-<span class="toggle-label">Include optional columns: <em>Module, Close Date, Detail Description &amp; Solution, SAAS Support SR, Current Owner</em></span>
-</div>
-<button class="btn btn-primary" id="analyzeBtn" onclick="runAnalysis()" disabled>🔍 Analyze</button>
-</div>
-<div id="results" style="display:none;">
-<div class="stats-grid">
-<div class="stat"><div class="stat-n" id="sn1" style="color:var(--danger)">0</div><div class="stat-l">Missing in Tracker</div></div>
-<div class="stat"><div class="stat-n" id="sn2" style="color:var(--warning)">0</div><div class="stat-l">Tracker Only</div></div>
-<div class="stat"><div class="stat-n" id="sn3" style="color:var(--warning)">0</div><div class="stat-l">Priority Mismatches</div></div>
-<div class="stat"><div class="stat-n" id="sn4" style="color:#60a5fa">0</div><div class="stat-l">Incomplete Entries</div></div>
-<div class="stat"><div class="stat-n" id="sn5" style="color:var(--purple)">0</div><div class="stat-l">Duplicates</div></div>
-</div>
-<!-- Form Generator Panel -->
-<div class="formgen-panel" id="formgenPanel" style="display:none;">
-<h2>📤 Send Data Collection Forms</h2>
-<div class="compress-info">⚡ LZ-String compressed links — works for any number of fields, no backend needed</div>
-<p>Click a team member to instantly generate their compressed link. No Apps Script call needed for link generation — the entire payload is compressed into the URL itself.</p>
-<div class="person-cards" id="personCards"></div>
-<div class="formgen-actions">
-<button class="btn btn-outline" onclick="copyAllLinks()">📋 Copy All Links</button>
-<button class="btn btn-success" onclick="showPage('responses')">📥 View Responses →</button>
-</div>
-</div>
-<div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-red"></div>Missing in Tracker<span class="pill pill-red" id="c1">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t1"></div></div></div>
-<div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-yellow"></div>In Tracker Only (Not in ServiceNow)<span class="pill pill-yellow" id="c2">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t2"></div></div></div>
-<div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-yellow"></div>Priority Mismatches<span class="pill pill-yellow" id="c3">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t3"></div></div></div>
-<div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-blue"></div>Missing Fields Summary by Team Member<span class="pill pill-blue" id="c4">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body open"><div id="t4"></div></div></div>
-<div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-blue"></div>Incomplete Entries — Detailed<span class="pill pill-blue" id="c5">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t5"></div></div></div>
-<div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-purple"></div>Duplicate Entries<span class="pill pill-purple" id="c6">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t6"></div></div></div>
-</div>
-</div>
-<!-- PAGE: RESPONSES -->
-<div class="page" id="page-responses">
-<div class="responses-toolbar">
-<div>
-<div class="response-count" id="respCount">0</div>
-<div class="response-label">Total Responses Received</div>
-</div>
-<button class="btn btn-outline" onclick="loadResponses()">↻ Refresh</button>
-<button class="btn btn-success" onclick="exportCSV()">⬇ Export CSV</button>
-</div>
-<div id="responsesTable"><div class="empty"><div class="ck">📥</div>Click Refresh to load responses from Google Sheets</div></div>
-</div>
-<!-- PAGE: SETUP -->
-<div class="page" id="page-setup">
-<div class="setup-card">
-<h2 style="font-family:'Instrument Serif',serif;font-size:1.5rem;font-weight:400;margin-bottom:6px;">Setup Guide</h2>
-<p style="color:var(--text-dim);font-size:.8rem;margin-bottom:28px;">LZ-String compression — links are self-contained, no Apps Script needed for link generation. Apps Script only used for collecting responses.</p>
-<div class="setup-step"><div class="step-num">1</div><div class="step-content"><h3>Create a Google Sheet</h3><p>Go to <a href="https://sheets.google.com" target="_blank" style="color:var(--accent2)">sheets.google.com</a> → create blank spreadsheet → name it <code>Incident Tracker Responses</code>.</p></div></div>
-<div class="setup-step"><div class="step-num">2</div><div class="step-content"><h3>Open Apps Script</h3><p><strong>Extensions → Apps Script</strong> → delete all code → paste entire contents of <code>Code.gs</code> → Save.</p></div></div>
-<div class="setup-step"><div class="step-num">3</div><div class="step-content"><h3>Deploy as Web App</h3><p><strong>Deploy → New deployment → Web app</strong><br>Execute as: <code>Me</code> · Access: <code>Anyone</code> → Deploy → Authorize → Copy the URL.</p><div class="url-display">https://script.google.com/macros/s/AKfycb.../exec</div></div></div>
-<div class="setup-step"><div class="step-num">4</div><div class="step-content"><h3>Update form.html</h3><p>Open <code>form.html</code> → find <code>const APPS_SCRIPT_URL = "..."</code> → paste your Web App URL → save.</p></div></div>
-<div class="setup-step"><div class="step-num">5</div><div class="step-content"><h3>Update index.html</h3><p>Open <code>index.html</code> → find <code>const GITHUB_PAGES_BASE = "..."</code> → paste your GitHub Pages URL (no trailing slash) → save.</p></div></div>
-<div class="setup-step"><div class="step-num">6</div><div class="step-content"><h3>Push to GitHub &amp; enable Pages</h3><p>Push all 3 files → <strong>Settings → Pages → Source: main / root</strong> → Save. Live in ~60 seconds.</p></div></div>
-<div class="setup-step"><div class="step-num">7</div><div class="step-content"><h3>Paste Apps Script URL in topbar</h3><p>On your live site, paste the URL in the <strong>Apps Script URL</strong> topbar field. This is only used for the Responses tab (to read back submissions).</p></div></div>
-<div class="setup-step"><div class="step-num">8</div><div class="step-content"><h3>Daily workflow</h3><p>1. Upload both Excel files → Analyze.<br>2. Click team member card → link generates instantly (no network call).<br>3. Copy &amp; send via WhatsApp/Teams.<br>4. They fill &amp; submit → Responses tab → Refresh → Export CSV.</p></div></div>
-</div>
-</div>
-</div>
-</div>
+
 <!-- MODAL -->
 <div class="overlay" id="linkModal">
-<div class="modal">
-<div class="modal-head">
-<div>
-<div class="modal-title" id="modalTitle">Share Form Link</div>
-<div class="modal-sub" id="modalSub"></div>
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="modalTitle">Share Form Link</div>
+        <div class="modal-sub" id="modalSub"></div>
+      </div>
+      <button class="modal-x" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="share-box">
+        <div class="share-label">Compressed Shareable Link</div>
+        <div class="share-link-row">
+          <input class="share-link-input" id="shareLink" readonly>
+          <button class="btn-copy-link" onclick="copyShareLink()">Copy</button>
+        </div>
+        <div class="url-size-bar">
+          <div class="url-size-label"><span>URL Size</span><span id="urlSizeText">— chars</span></div>
+          <div class="url-size-track"><div class="url-size-fill safe" id="urlSizeFill" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div style="font-size:.75rem;color:var(--text-dim);line-height:1.8;">
+        ⚡ Link generated instantly — no server calls needed<br>
+        📱 Send via <strong>WhatsApp, Email, Teams, or Slack</strong><br>
+        🔒 Data is compressed &amp; encoded — only readable by the form<br>
+        ✅ On submit, data goes directly to your Google Sheet
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+      <button class="btn btn-primary" onclick="copyShareLink()">📋 Copy Link</button>
+    </div>
+  </div>
 </div>
-<button class="modal-x" onclick="closeModal()">✕</button>
-</div>
-<div class="modal-body">
-<div class="share-box">
-<div class="share-label">Compressed Shareable Link — Send this to the team member</div>
-<div class="share-link-row">
-<input class="share-link-input" id="shareLink" readonly>
-<button class="btn-copy-link" onclick="copyShareLink()">Copy</button>
-</div>
-<!-- URL size indicator -->
-<div class="url-size-bar">
-<div class="url-size-label">
-<span>URL Size</span>
-<span id="urlSizeText">— chars</span>
-</div>
-<div class="url-size-track">
-<div class="url-size-fill safe" id="urlSizeFill" style="width:0%"></div>
-</div>
-</div>
-</div>
-<div style="font-size:.75rem;color:var(--text-dim);line-height:1.8;">
-⚡ Link generated instantly — no server calls needed<br>
-📱 Send via <strong>WhatsApp, Email, Teams, or Slack</strong><br>
-🔒 Data is compressed &amp; encoded — only readable by the form<br>
-✅ On submit, data goes directly to your Google Sheet
-</div>
-</div>
-<div class="modal-foot">
-<button class="btn btn-outline" onclick="closeModal()">Close</button>
-<button class="btn btn-primary" onclick="copyShareLink()">📋 Copy Link</button>
-</div>
-</div>
-</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-// ══════════════════════════════════════════════════════
-//  ⚠️  REPLACE WITH YOUR ACTUAL GITHUB PAGES BASE URL
-//  No trailing slash. Example:
-//  const GITHUB_PAGES_BASE = "https://rahul.github.io/incident-tracker";
-// ══════════════════════════════════════════════════════
 const GITHUB_PAGES_BASE = "https://harshitkalraoracle-dot.github.io/comparision_servicenow_and_tracker";
 const REQUIRED = ['SR#','SR Open Date','Assignment Date','Incident Category','Type','CSU','Priority','Severity','Description','Requested By','Worked By','Status','Current Owner','Comments'];
-const OPTIONAL = ['Module','Close Date','Detail Description and Solution','SAAS Support SR (if any)', 'Current Owner'];
+const OPTIONAL = ['Module','Close Date','Detail Description and Solution','SAAS Support SR (if any)','Current Owner'];
 const AVATAR_COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ef4444','#06b6d4'];
-const URL_MAX = 8000; // safe browser URL limit
-let snData = null, trData = null, checkOpt = false, allIncomplete = {};
-// ── Config ─────────────────────────────────────────────
-function saveConfig() {
-const url = document.getElementById('appsScriptUrl').value.trim();
-if (url) localStorage.setItem('appsScriptUrl', url);
+const URL_MAX = 8000;
+let snData=null,trData=null,checkOpt=false,allIncomplete={};
+window._snFile=null; window._trFile=null;
+
+function saveConfig(){const u=document.getElementById('appsScriptUrl').value.trim();if(u)localStorage.setItem('appsScriptUrl',u);}
+function loadConfig(){const s=localStorage.getItem('appsScriptUrl');if(s)document.getElementById('appsScriptUrl').value=s;}
+function getAppsScriptUrl(){return document.getElementById('appsScriptUrl').value.trim();}
+
+// FIXED navigation — safely checks element exists before using it
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const page=document.getElementById('page-'+id);
+  const nav=document.getElementById('nav-'+id);
+  if(page) page.classList.add('active');
+  if(nav)  nav.classList.add('active');
+  const titles={analyze:'Analyze Sheets',responses:'Responses',setup:'Setup Guide'};
+  document.getElementById('pageTitle').textContent=titles[id]||id;
 }
-function loadConfig() {
-const saved = localStorage.getItem('appsScriptUrl');
-if (saved) document.getElementById('appsScriptUrl').value = saved;
+
+// Drag & drop
+function onDragOver(e,id){e.preventDefault();const z=document.getElementById(id);z.style.borderColor='var(--accent)';z.style.background='rgba(99,102,241,.07)';}
+function onDragLeave(id){const z=document.getElementById(id);z.style.borderColor='';z.style.background='';}
+function onDrop(e,type,zoneId){
+  e.preventDefault();onDragLeave(zoneId);
+  const file=e.dataTransfer.files[0];if(!file)return;
+  const inp=document.getElementById(type==='sn'?'inputSN':'inputTR');
+  try{const dt=new DataTransfer();dt.items.add(file);inp.files=dt.files;}catch(err){}
+  processFile(type,file);
 }
-function getAppsScriptUrl() { return document.getElementById('appsScriptUrl').value.trim(); }
-// ── Navigation ──────────────────────────────────────────
-function showPage(id) {
-document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-document.getElementById('page-' + id).classList.add('active');
-document.getElementById('nav-' + id).classList.add('active');
-const titles = { analyze:'Analyze Sheets', responses:'Responses', setup:'Setup Guide' };
-document.getElementById('pageTitle').textContent = titles[id] || id;
+
+// FIXED file handling — uses label+hidden input so clicking anywhere on zone works
+function handleFile(type,input){
+  const file=input.files[0];if(!file)return;
+  processFile(type,file);
 }
-// ── File handling ───────────────────────────────────────
-function handleFile(type, input) {
-const file = input.files[0];
-if (!file) return;
-if (!file.name.endsWith('.xlsx')) { toast('⚠️ Only .xlsx files'); input.value=''; return; }
-const el = document.getElementById(type === 'sn' ? 'snName' : 'trName');
-el.textContent = '✓ ' + file.name;
-el.style.display = 'block';
-const snOk = document.getElementById('snName').style.display !== 'none';
-const trOk = document.getElementById('trName').style.display !== 'none';
-document.getElementById('analyzeBtn').disabled = !(snOk && trOk);
+function processFile(type,file){
+  if(!file.name.endsWith('.xlsx')){toast('⚠️ Only .xlsx files accepted');return;}
+  if(type==='sn') window._snFile=file;
+  else            window._trFile=file;
+  const el=document.getElementById(type==='sn'?'snName':'trName');
+  el.textContent='✓ '+file.name; el.style.display='block';
+  document.getElementById('analyzeBtn').disabled=!(window._snFile&&window._trFile);
 }
-function readXLSX(file) {
-return new Promise((res, rej) => {
-const reader = new FileReader();
-reader.onload = e => {
-try {
-const wb = XLSX.read(new Uint8Array(e.target.result), { type:'array' });
-res(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { raw:false, defval:'' }));
-} catch(err) { rej(err); }
-};
-reader.onerror = rej;
-reader.readAsArrayBuffer(file);
-});
+
+function readXLSX(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>{try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});res(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{raw:false,defval:''}));}catch(err){rej(err);}};
+    r.onerror=rej; r.readAsArrayBuffer(file);
+  });
 }
-function toggleOpt() {
-checkOpt = !checkOpt;
-document.getElementById('togTrack').classList.toggle('on', checkOpt);
+function toggleOpt(){checkOpt=!checkOpt;document.getElementById('togTrack').classList.toggle('on',checkOpt);}
+
+async function runAnalysis(){
+  const btn=document.getElementById('analyzeBtn');
+  btn.disabled=true;btn.textContent='⏳ Analyzing…';
+  try{
+    snData=await readXLSX(window._snFile);
+    trData=await readXLSX(window._trFile);
+    analyze();
+    document.getElementById('results').style.display='block';
+    document.querySelectorAll('.sec-body').forEach(b=>b.classList.add('open'));
+    document.querySelectorAll('.sec-chev').forEach(c=>c.style.transform='rotate(180deg)');
+    btn.textContent='✓ Done';
+    setTimeout(()=>{btn.textContent='🔍 Analyze';btn.disabled=false;},2000);
+  }catch(err){alert('Error: '+err.message);btn.textContent='🔍 Analyze';btn.disabled=false;}
 }
-// ── Analysis ────────────────────────────────────────────
-async function runAnalysis() {
-const btn = document.getElementById('analyzeBtn');
-btn.disabled = true; btn.textContent = '⏳ Analyzing…';
-try {
-const inputs = document.querySelectorAll('.drop-zone input[type="file"]');
-snData = await readXLSX(inputs[0].files[0]);
-trData = await readXLSX(inputs[1].files[0]);
-analyze();
-document.getElementById('results').style.display = 'block';
-document.querySelectorAll('.sec-body').forEach(b => b.classList.add('open'));
-document.querySelectorAll('.sec-chev').forEach(c => c.style.transform = 'rotate(180deg)');
-btn.textContent = '✓ Done';
-setTimeout(() => { btn.textContent = '🔍 Analyze'; btn.disabled = false; }, 2000);
-} catch(err) {
-alert('Error: ' + err.message);
-btn.textContent = '🔍 Analyze'; btn.disabled = false;
+
+function analyze(){
+  const trMap=new Map(),snMap=new Map();
+  trData.forEach(r=>{const s=(r['SR#']||'').trim();if(s)trMap.set(s,r);});
+  snData.forEach(r=>{const s=(r['SR#']||r['Number']||'').trim();if(s)snMap.set(s,r);});
+  const missing=snData.filter(r=>{const s=(r['SR#']||r['Number']||'').trim();return s&&!trMap.has(s);});
+  const trackerOnly=trData.filter(r=>{const s=(r['SR#']||'').trim();return s&&!snMap.has(s);});
+  const mismatches=[];
+  snData.forEach(r=>{
+    const s=(r['SR#']||r['Number']||'').trim();
+    if(s&&trMap.has(s)){const tr=trMap.get(s);const sp=(r['Priority']||'').trim(),tp=(tr['Priority']||'').trim();
+    if(sp&&tp&&sp!==tp)mismatches.push({sr:s,snP:sp,trP:tp,desc:r['Description']||'',by:tr['Worked By']||''});}
+  });
+  const cols=checkOpt?[...REQUIRED,...OPTIONAL]:[...REQUIRED];
+  const raw={};
+  trData.forEach(r=>{
+    const person=(r['Worked By']||'').trim()||'Unassigned';
+    const sr=(r['SR#']||'').trim()||'N/A';
+    const empty=cols.filter(f=>!(r[f]||'').trim());
+    if(!empty.length)return;
+    if(!raw[person])raw[person]={};
+    if(!raw[person][sr])raw[person][sr]={fields:empty,description:r['Description']||'N/A',rowCount:1};
+    else{raw[person][sr].rowCount++;empty.forEach(f=>{if(!raw[person][sr].fields.includes(f))raw[person][sr].fields.push(f);});}
+  });
+  allIncomplete={};
+  Object.keys(raw).forEach(p=>{allIncomplete[p]=Object.keys(raw[p]).map(sr=>({sr,fields:raw[p][sr].fields,description:raw[p][sr].description,rowCount:raw[p][sr].rowCount}));});
+  const srOcc={};
+  trData.forEach((r,i)=>{const s=(r['SR#']||'').trim();if(s){if(!srOcc[s])srOcc[s]=[];srOcc[s].push({row:r,idx:i+2});}});
+  const dups={};Object.keys(srOcc).forEach(s=>{if(srOcc[s].length>1)dups[s]=srOcc[s];});
+  document.getElementById('sn1').textContent=missing.length;
+  document.getElementById('sn2').textContent=trackerOnly.length;
+  document.getElementById('sn3').textContent=mismatches.length;
+  document.getElementById('sn4').textContent=Object.values(allIncomplete).reduce((s,a)=>s+a.length,0);
+  document.getElementById('sn5').textContent=Object.keys(dups).length;
+  renderMissing(missing);renderTrackerOnly(trackerOnly);renderMismatches(mismatches);
+  renderSummary(allIncomplete,trData);renderDetailed(allIncomplete);renderDups(dups);
+  buildFormGen(allIncomplete);
 }
+
+function pc(p){const s=(p||'').toString().toLowerCase();if(s.includes('p1')||s.includes('critical'))return 'p-high';if(s.includes('p2')||s.includes('high'))return 'p-high';if(s.includes('p3')||s.includes('medium'))return 'p-med';if(s.includes('p4')||s.includes('low'))return 'p-low';return '';}
+function emptyMsg(m){return `<div class="empty"><div class="ck">✓</div>${m}</div>`;}
+function toggleSec(h){const b=h.nextElementSibling,c=h.querySelector('.sec-chev');b.classList.toggle('open');c.style.transform=b.classList.contains('open')?'rotate(180deg)':'';}
+
+function renderMissing(data){document.getElementById('c1').textContent=data.length;const c=document.getElementById('t1');if(!data.length){c.innerHTML=emptyMsg('All ServiceNow incidents are tracked');return;}c.innerHTML=`<table><thead><tr><th>SR#</th><th>Priority</th><th>Description</th><th>Open Date</th><th>Status</th></tr></thead><tbody>${data.map(r=>`<tr><td><strong>${r['SR#']||r['Number']||'N/A'}</strong></td><td class="${pc(r['Priority'])}">${r['Priority']||'N/A'}</td><td>${r['Description']||'N/A'}</td><td>${r['SR Open Date']||r['Open Date']||'N/A'}</td><td>${r['Status']||'N/A'}</td></tr>`).join('')}</tbody></table>`;}
+function renderTrackerOnly(data){document.getElementById('c2').textContent=data.length;const c=document.getElementById('t2');if(!data.length){c.innerHTML=emptyMsg('All tracker incidents exist in ServiceNow');return;}c.innerHTML=`<table><thead><tr><th>SR#</th><th>Description</th><th>Worked By</th><th>Priority</th><th>Status</th></tr></thead><tbody>${data.map(r=>`<tr><td><strong>${r['SR#']||'N/A'}</strong></td><td>${r['Description']||'N/A'}</td><td>${r['Worked By']||'N/A'}</td><td class="${pc(r['Priority'])}">${r['Priority']||'N/A'}</td><td>${r['Status']||'N/A'}</td></tr>`).join('')}</tbody></table>`;}
+function renderMismatches(data){document.getElementById('c3').textContent=data.length;const c=document.getElementById('t3');if(!data.length){c.innerHTML=emptyMsg('All priorities match');return;}c.innerHTML=`<table><thead><tr><th>SR#</th><th>ServiceNow Priority</th><th>Tracker Priority</th><th>Worked By</th><th>Description</th></tr></thead><tbody>${data.map(m=>`<tr><td><strong>${m.sr}</strong></td><td class="${pc(m.snP)}">${m.snP}</td><td class="${pc(m.trP)}">${m.trP}</td><td>${m.by||'N/A'}</td><td>${m.desc}</td></tr>`).join('')}</tbody></table>`;}
+
+function renderSummary(incomplete,allTr){
+  const totals={};allTr.forEach(r=>{const p=(r['Worked By']||'').trim();if(p&&p.toLowerCase()!=='unassigned')totals[p]=(totals[p]||0)+1;});
+  const sum={};
+  Object.keys(incomplete).forEach(p=>{if(!p||p.toLowerCase()==='unassigned')return;const entries=incomplete[p];const freq={};entries.forEach(e=>e.fields.forEach(f=>{freq[f]=(freq[f]||0)+1;}));const top=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([f,c])=>`${f} (${c})`).join(', ');const totalM=entries.reduce((s,e)=>s+e.fields.length,0);sum[p]={total:totals[p]||entries.length,with:entries.length,totalM,avg:(totalM/entries.length).toFixed(1),top};});
+  const grand=Object.values(sum).reduce((s,v)=>s+v.with,0);
+  document.getElementById('c4').textContent=grand;
+  document.getElementById('c5').textContent=Object.values(incomplete).reduce((s,a)=>s+a.length,0);
+  const c=document.getElementById('t4');
+  if(!grand){c.innerHTML=emptyMsg('No missing fields found');return;}
+  c.innerHTML=`<table><thead><tr><th>Team Member</th><th>Total</th><th>Incomplete</th><th>Missing Fields</th><th>Avg/Incident</th><th>Most Missing</th></tr></thead><tbody>${Object.keys(sum).sort((a,b)=>sum[b].with-sum[a].with).map(p=>{const s=sum[p];const pct=((s.with/s.total)*100).toFixed(0);return `<tr><td><strong>${p}</strong></td><td>${s.total}</td><td>${s.with}<span style="color:var(--text-dim);font-size:.75em;"> (${pct}%)</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></td><td><span style="color:var(--danger);font-weight:600;">${s.totalM}</span></td><td>${s.avg}</td><td style="color:var(--text-dim);font-size:.72em;">${s.top||'N/A'}</td></tr>`;}).join('')}</tbody></table>`;
 }
-function analyze() {
-const trMap = new Map(), snMap = new Map();
-trData.forEach(r => { const s=(r['SR#']||'').trim(); if(s) trMap.set(s,r); });
-snData.forEach(r => { const s=(r['SR#']||r['Number']||'').trim(); if(s) snMap.set(s,r); });
-const missing     = snData.filter(r => { const s=(r['SR#']||r['Number']||'').trim(); return s && !trMap.has(s); });
-const trackerOnly = trData.filter(r => { const s=(r['SR#']||'').trim(); return s && !snMap.has(s); });
-const mismatches = [];
-snData.forEach(r => {
-const s = (r['SR#']||r['Number']||'').trim();
-if (s && trMap.has(s)) {
-const tr = trMap.get(s);
-const sp = (r['Priority']||'').trim(), tp = (tr['Priority']||'').trim();
-if (sp && tp && sp !== tp) mismatches.push({ sr:s, snP:sp, trP:tp, desc:r['Description']||'', by:tr['Worked By']||'' });
-}
-});
-const cols = checkOpt ? [...REQUIRED,...OPTIONAL] : [...REQUIRED];
-// Build per-person, per-SR map — deduplicate rows with same SR# & person
-const rawIncomplete = {};
-trData.forEach(r => {
-const person = (r['Worked By']||'').trim() || 'Unassigned';
-const sr     = (r['SR#']||'').trim() || 'N/A';
-const empty  = cols.filter(f => !(r[f]||'').trim());
-if (!empty.length) return;
-if (!rawIncomplete[person]) rawIncomplete[person] = {};
-if (!rawIncomplete[person][sr]) {
-rawIncomplete[person][sr] = { fields: empty, description: r['Description']||'N/A', rowCount: 1 };
-} else {
-// Same SR# for same person — merge missing fields and count duplicate rows
-rawIncomplete[person][sr].rowCount++;
-empty.forEach(f => { if (!rawIncomplete[person][sr].fields.includes(f)) rawIncomplete[person][sr].fields.push(f); });
-}
-});
-// Convert to array format used throughout
-allIncomplete = {};
-Object.keys(rawIncomplete).forEach(person => {
-allIncomplete[person] = Object.keys(rawIncomplete[person]).map(sr => ({
-sr,
-fields:      rawIncomplete[person][sr].fields,
-description: rawIncomplete[person][sr].description,
-rowCount:    rawIncomplete[person][sr].rowCount
-}));
-});
-const srOcc = {};
-trData.forEach((r,i) => { const s=(r['SR#']||'').trim(); if(s){if(!srOcc[s])srOcc[s]=[];srOcc[s].push({row:r,idx:i+2});} });
-const dups = {};
-Object.keys(srOcc).forEach(s => { if(srOcc[s].length>1) dups[s]=srOcc[s]; });
-document.getElementById('sn1').textContent = missing.length;
-document.getElementById('sn2').textContent = trackerOnly.length;
-document.getElementById('sn3').textContent = mismatches.length;
-document.getElementById('sn4').textContent = Object.values(allIncomplete).reduce((s,a)=>s+a.length,0);
-document.getElementById('sn5').textContent = Object.keys(dups).length;
-renderMissing(missing); renderTrackerOnly(trackerOnly); renderMismatches(mismatches);
-renderSummary(allIncomplete, trData); renderDetailed(allIncomplete); renderDups(dups);
-buildFormGen(allIncomplete);
-}
-// ── Render helpers ──────────────────────────────────────
-function pc(p) {
-const s=(p||'').toString().toLowerCase();
-if(s.includes('p1')||s.includes('critical'))return 'p-high';
-if(s.includes('p2')||s.includes('high'))return 'p-high';
-if(s.includes('p3')||s.includes('medium'))return 'p-med';
-if(s.includes('p4')||s.includes('low'))return 'p-low';
-return '';
-}
-function empty(msg){return `<div class="empty"><div class="ck">✓</div>${msg}</div>`;}
-function toggleSec(head){
-const body=head.nextElementSibling, chev=head.querySelector('.sec-chev');
-body.classList.toggle('open');
-chev.style.transform=body.classList.contains('open')?'rotate(180deg)':'';
-}
-function renderMissing(data){
-document.getElementById('c1').textContent=data.length;
-const c=document.getElementById('t1');
-if(!data.length){c.innerHTML=empty('All ServiceNow incidents are tracked');return;}
-c.innerHTML=`<table><thead><tr><th>SR#</th><th>Priority</th><th>Description</th><th>Open Date</th><th>Status</th></tr></thead><tbody>
-${data.map(r=>`<tr><td><strong>${r['SR#']||r['Number']||'N/A'}</strong></td>
-<td class="${pc(r['Priority'])}">${r['Priority']||'N/A'}</td>
-<td>${r['Description']||'N/A'}</td><td>${r['SR Open Date']||r['Open Date']||'N/A'}</td>
-<td>${r['Status']||'N/A'}</td></tr>`).join('')}</tbody></table>`;
-}
-function renderTrackerOnly(data){
-document.getElementById('c2').textContent=data.length;
-const c=document.getElementById('t2');
-if(!data.length){c.innerHTML=empty('All tracker incidents exist in ServiceNow');return;}
-c.innerHTML=`<table><thead><tr><th>SR#</th><th>Description</th><th>Worked By</th><th>Priority</th><th>Status</th></tr></thead><tbody>
-${data.map(r=>`<tr><td><strong>${r['SR#']||'N/A'}</strong></td>
-<td>${r['Description']||'N/A'}</td><td>${r['Worked By']||'N/A'}</td>
-<td class="${pc(r['Priority'])}">${r['Priority']||'N/A'}</td>
-<td>${r['Status']||'N/A'}</td></tr>`).join('')}</tbody></table>`;
-}
-function renderMismatches(data){
-document.getElementById('c3').textContent=data.length;
-const c=document.getElementById('t3');
-if(!data.length){c.innerHTML=empty('All priorities match');return;}
-c.innerHTML=`<table><thead><tr><th>SR#</th><th>ServiceNow Priority</th><th>Tracker Priority</th><th>Worked By</th><th>Description</th></tr></thead><tbody>
-${data.map(m=>`<tr><td><strong>${m.sr}</strong></td>
-<td class="${pc(m.snP)}">${m.snP}</td><td class="${pc(m.trP)}">${m.trP}</td>
-<td>${m.by||'N/A'}</td><td>${m.desc}</td></tr>`).join('')}</tbody></table>`;
-}
-function renderSummary(incomplete, allTr){
-const totals={};
-allTr.forEach(r=>{const p=(r['Worked By']||'').trim();if(p&&p.toLowerCase()!=='unassigned')totals[p]=(totals[p]||0)+1;});
-const sum={};
-Object.keys(incomplete).forEach(p=>{
-if(!p||p.toLowerCase()==='unassigned')return;
-const entries=incomplete[p];
-const freq={};
-entries.forEach(e=>e.fields.forEach(f=>{freq[f]=(freq[f]||0)+1;}));
-const top=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([f,c])=>`${f} (${c})`).join(', ');
-const totalM=entries.reduce((s,e)=>s+e.fields.length,0);
-sum[p]={total:totals[p]||entries.length,with:entries.length,totalM,avg:(totalM/entries.length).toFixed(1),top};
-});
-const grand=Object.values(sum).reduce((s,v)=>s+v.with,0);
-document.getElementById('c4').textContent=grand;
-document.getElementById('c5').textContent=Object.values(incomplete).reduce((s,a)=>s+a.length,0);
-const c=document.getElementById('t4');
-if(!grand){c.innerHTML=empty('No missing fields found');return;}
-c.innerHTML=`<table><thead><tr><th>Team Member</th><th>Total</th><th>Incomplete</th><th>Missing Fields</th><th>Avg/Incident</th><th>Most Missing</th></tr></thead><tbody>
-${Object.keys(sum).sort((a,b)=>sum[b].with-sum[a].with).map(p=>{
-const s=sum[p];const pct=((s.with/s.total)*100).toFixed(0);
-return `<tr><td><strong>${p}</strong></td><td>${s.total}</td>
-<td>${s.with}<span style="color:var(--text-dim);font-size:.75em;"> (${pct}%)</span>
-<div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></td>
-<td><span style="color:var(--danger);font-weight:600;">${s.totalM}</span></td>
-<td>${s.avg}</td><td style="color:var(--text-dim);font-size:.72em;">${s.top||'N/A'}</td></tr>`;
-}).join('')}</tbody></table>`;
-}
+
 function renderDetailed(incomplete){
-const c=document.getElementById('t5');
-const all=Object.values(incomplete).reduce((s,a)=>s+a.length,0);
-if(!all){c.innerHTML=empty('All entries are complete');return;}
-c.innerHTML=Object.keys(incomplete).sort().map(person=>{
-const entries=incomplete[person];
-const totalRows=entries.reduce((s,e)=>s+(e.rowCount||1),0);
-const dupCount=entries.filter(e=>(e.rowCount||1)>1).length;
-return `<div class="person-block">
-<div class="person-head">
-<div class="person-head-name">${person}</div>
-<div style="display:flex;gap:8px;align-items:center;">
-${dupCount>0?`<span class="pill pill-purple" title="${dupCount} SR(s) span multiple rows — form will fill all rows at once">⚠ ${dupCount} multi-row SR${dupCount>1?'s':''}</span>`:''}
-<span class="pill pill-blue">${entries.length} unique SR${entries.length>1?'s':''} · ${totalRows} total rows</span>
-</div>
-</div>
-<div style="padding:12px 16px;">
-<table><thead><tr><th style="width:12%">SR#</th><th style="width:8%">Rows</th><th style="width:42%">Missing Fields</th><th>Description</th></tr></thead><tbody>
-${entries.map(e=>`<tr>
-<td><strong>${e.sr}</strong></td>
-<td style="text-align:center;">${(e.rowCount||1)>1
-? `<span style="color:var(--purple);font-weight:600;">${e.rowCount}</span><span style="color:var(--text-dim);font-size:.7em;"> rows</span>`
-: `<span style="color:var(--text-dim);">1</span>`}
-</td>
-<td>${e.fields.map(f=>`<span class="tag">${f}</span>`).join('')}</td>
-<td style="color:var(--text-dim);font-size:.75em;">${e.description}</td></tr>`).join('')}
-</tbody></table>
-${dupCount>0?`<div style="margin-top:10px;font-size:.72rem;color:var(--purple);background:rgba(192,132,252,.06);border:1px solid rgba(192,132,252,.15);border-radius:6px;padding:8px 12px;">
-ℹ️ When this person submits the form, their data will be applied to <strong>all rows</strong> of each multi-row SR# automatically.
-</div>`:''}
-</div></div>`;
-}).join('');
+  const c=document.getElementById('t5');const all=Object.values(incomplete).reduce((s,a)=>s+a.length,0);
+  if(!all){c.innerHTML=emptyMsg('All entries are complete');return;}
+  c.innerHTML=Object.keys(incomplete).sort().map(person=>{const entries=incomplete[person];const totalRows=entries.reduce((s,e)=>s+(e.rowCount||1),0);const dupCount=entries.filter(e=>(e.rowCount||1)>1).length;return `<div class="person-block"><div class="person-head"><div class="person-head-name">${person}</div><div style="display:flex;gap:8px;align-items:center;">${dupCount>0?`<span class="pill pill-purple">⚠ ${dupCount} multi-row SR${dupCount>1?'s':''}</span>`:''}<span class="pill pill-blue">${entries.length} unique SR${entries.length>1?'s':''} · ${totalRows} total rows</span></div></div><div style="padding:12px 16px;"><table><thead><tr><th>SR#</th><th>Rows</th><th>Missing Fields</th><th>Description</th></tr></thead><tbody>${entries.map(e=>`<tr><td><strong>${e.sr}</strong></td><td style="text-align:center;">${(e.rowCount||1)>1?`<span style="color:var(--purple);font-weight:600;">${e.rowCount}</span><span style="color:var(--text-dim);font-size:.7em;"> rows</span>`:`<span style="color:var(--text-dim);">1</span>`}</td><td>${e.fields.map(f=>`<span class="tag">${f}</span>`).join('')}</td><td style="color:var(--text-dim);font-size:.75em;">${e.description}</td></tr>`).join('')}</tbody></table>${dupCount>0?`<div style="margin-top:10px;font-size:.72rem;color:var(--purple);background:rgba(192,132,252,.06);border:1px solid rgba(192,132,252,.15);border-radius:6px;padding:8px 12px;">ℹ️ Data applied to all rows of each multi-row SR# on submit.</div>`:''}</div></div>`;}).join('');
 }
+
 function renderDups(dups){
-const groups=Object.keys(dups).length;
-const rows=Object.values(dups).reduce((s,a)=>s+a.length,0);
-document.getElementById('c6').textContent=groups>0?`${groups} SR${groups>1?'s':''} (${rows} rows)`:'0';
-const c=document.getElementById('t6');
-if(!groups){c.innerHTML=empty('No duplicates found');return;}
-c.innerHTML=Object.keys(dups).sort().map(sr=>{
-const entries=dups[sr];
-return `<div class="person-block" style="border-color:rgba(192,132,252,.2);">
-<div class="person-head" style="background:rgba(192,132,252,.06);">
-<span style="color:var(--purple);font-weight:600;">SR# ${sr}</span>
-<span class="pill pill-purple">${entries.length} duplicates</span>
-</div>
-<div style="padding:12px 16px;">
-<table><thead><tr><th>Row</th><th>Description</th><th>Worked By</th><th>Priority</th><th>Status</th></tr></thead><tbody>
-${entries.map(({row,idx})=>`<tr><td><strong>Row ${idx}</strong></td>
-<td>${row['Description']||'N/A'}</td><td>${row['Worked By']||'N/A'}</td>
-<td class="${pc(row['Priority'])}">${row['Priority']||'N/A'}</td>
-<td>${row['Status']||'N/A'}</td></tr>`).join('')}
-</tbody></table></div></div>`;
-}).join('');
+  const groups=Object.keys(dups).length,rows=Object.values(dups).reduce((s,a)=>s+a.length,0);
+  document.getElementById('c6').textContent=groups>0?`${groups} SR${groups>1?'s':''} (${rows} rows)`:'0';
+  const c=document.getElementById('t6');if(!groups){c.innerHTML=emptyMsg('No duplicates found');return;}
+  c.innerHTML=Object.keys(dups).sort().map(sr=>{const entries=dups[sr];return `<div class="person-block" style="border-color:rgba(192,132,252,.2);"><div class="person-head" style="background:rgba(192,132,252,.06);"><span style="color:var(--purple);font-weight:600;">SR# ${sr}</span><span class="pill pill-purple">${entries.length} duplicates</span></div><div style="padding:12px 16px;"><table><thead><tr><th>Row</th><th>Description</th><th>Worked By</th><th>Priority</th><th>Status</th></tr></thead><tbody>${entries.map(({row,idx})=>`<tr><td><strong>Row ${idx}</strong></td><td>${row['Description']||'N/A'}</td><td>${row['Worked By']||'N/A'}</td><td class="${pc(row['Priority'])}">${row['Priority']||'N/A'}</td><td>${row['Status']||'N/A'}</td></tr>`).join('')}</tbody></table></div></div>`;}).join('');
 }
-// ── Form Generator ──────────────────────────────────────
-function buildFormGen(incomplete) {
-const people = Object.keys(incomplete).filter(p => p && p.toLowerCase() !== 'unassigned');
-if (!people.length) { document.getElementById('formgenPanel').style.display='none'; return; }
-document.getElementById('formgenPanel').style.display = 'block';
-document.getElementById('personCards').innerHTML = people
-.sort((a,b) => incomplete[b].length - incomplete[a].length)
-.map((person, i) => {
-const entries     = incomplete[person];
-const totalFields = entries.reduce((s,e) => s + e.fields.length, 0);
-const initials    = person.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-const color       = AVATAR_COLORS[i % AVATAR_COLORS.length];
-// Pre-compute compressed URL length for each person card
-const link        = buildLink(person, entries);
-const urlLen      = link ? link.length : 0;
-const sizeLabel   = urlLen > 0 ? `${urlLen.toLocaleString()} chars` : '';
-const sizeColor   = urlLen > 6000 ? 'var(--warning)' : 'var(--success)';
-return `<div class="person-card" onclick="openPersonModal('${person.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">
-<div class="p-avatar" style="background:${color}">${initials}</div>
-<div class="p-name">${person}</div>
-<div class="p-stats"><strong>${entries.length}</strong> incidents · <strong>${totalFields}</strong> missing</div>
-${sizeLabel ? `<div style="font-size:.62rem;color:${sizeColor};margin-top:4px;">🔗 ${sizeLabel}</div>` : ''}
-</div>`;
-}).join('');
+
+function buildFormGen(incomplete){
+  const people=Object.keys(incomplete).filter(p=>p&&p.toLowerCase()!=='unassigned');
+  if(!people.length){document.getElementById('formgenPanel').style.display='none';return;}
+  document.getElementById('formgenPanel').style.display='block';
+  document.getElementById('personCards').innerHTML=people.sort((a,b)=>incomplete[b].length-incomplete[a].length).map((person,i)=>{
+    const entries=incomplete[person],totalFields=entries.reduce((s,e)=>s+e.fields.length,0);
+    const initials=person.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const color=AVATAR_COLORS[i%AVATAR_COLORS.length];
+    const link=buildLink(person,entries);const urlLen=link?link.length:0;
+    const sizeLabel=urlLen>0?`${urlLen.toLocaleString()} chars`:'';
+    const sizeColor=urlLen>6000?'var(--warning)':'var(--success)';
+    return `<div class="person-card" onclick="openPersonModal('${person.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')"><div class="p-avatar" style="background:${color}">${initials}</div><div class="p-name">${person}</div><div class="p-stats"><strong>${entries.length}</strong> incidents · <strong>${totalFields}</strong> missing</div>${sizeLabel?`<div style="font-size:.62rem;color:${sizeColor};margin-top:4px;">🔗 ${sizeLabel}</div>`:''}</div>`;
+  }).join('');
 }
-// ── Core: compress payload into URL ────────────────────
-function buildLink(person, entries) {
-const payload = {
-person,
-generatedAt: new Date().toISOString(),
-entries: entries.map(e => ({ sr: e.sr, description: e.description, fields: e.fields, rowCount: e.rowCount || 1 }))
-};
-try {
-const json       = JSON.stringify(payload);
-const compressed = LZString.compressToEncodedURIComponent(json);
-return `${GITHUB_PAGES_BASE}/form.html?d=${compressed}`;
-} catch(err) {
-return null;
+
+function buildLink(person,entries){
+  const payload={person,generatedAt:new Date().toISOString(),entries:entries.map(e=>({sr:e.sr,description:e.description,fields:e.fields,rowCount:e.rowCount||1}))};
+  try{const json=JSON.stringify(payload);const compressed=LZString.compressToEncodedURIComponent(json);return `${GITHUB_PAGES_BASE}/form.html?d=${compressed}`;}catch(err){return null;}
 }
+
+function openPersonModal(person){
+  const entries=allIncomplete[person];const totalFields=entries.reduce((s,e)=>s+e.fields.length,0);
+  document.getElementById('modalTitle').textContent=person;
+  document.getElementById('modalSub').textContent=`${entries.length} incomplete incident${entries.length>1?'s':''} · ${totalFields} missing fields`;
+  const link=buildLink(person,entries);document.getElementById('shareLink').value=link||'Error building link';
+  if(link){const len=link.length,pct=Math.min((len/URL_MAX)*100,100).toFixed(0);const f=document.getElementById('urlSizeFill');document.getElementById('urlSizeText').textContent=`${len.toLocaleString()} / ${URL_MAX.toLocaleString()} chars`;f.style.width=pct+'%';f.className='url-size-fill '+(len>7000?'danger':len>5000?'warn':'safe');}
+  document.getElementById('linkModal').classList.add('open');
 }
-function openPersonModal(person) {
-const entries     = allIncomplete[person];
-const totalFields = entries.reduce((s,e) => s + e.fields.length, 0);
-document.getElementById('modalTitle').textContent = person;
-document.getElementById('modalSub').textContent   = `${entries.length} incomplete incident${entries.length>1?'s':''} · ${totalFields} missing fields`;
-const link = buildLink(person, entries);
-document.getElementById('shareLink').value = link || 'Error building link';
-// URL size indicator
-if (link) {
-const len     = link.length;
-const pct     = Math.min((len / URL_MAX) * 100, 100).toFixed(0);
-const fillEl  = document.getElementById('urlSizeFill');
-const textEl  = document.getElementById('urlSizeText');
-textEl.textContent = `${len.toLocaleString()} / ${URL_MAX.toLocaleString()} chars`;
-fillEl.style.width = pct + '%';
-fillEl.className   = 'url-size-fill ' + (len > 7000 ? 'danger' : len > 5000 ? 'warn' : 'safe');
+function closeModal(){document.getElementById('linkModal').classList.remove('open');}
+document.getElementById('linkModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+function copyShareLink(){const v=document.getElementById('shareLink').value;if(!v){toast('⚠️ No link');return;}navigator.clipboard.writeText(v).then(()=>toast('✓ Link copied'));}
+function copyAllLinks(){
+  const people=Object.keys(allIncomplete).filter(p=>p&&p.toLowerCase()!=='unassigned');
+  if(!people.length){toast('No incomplete entries');return;}
+  const lines=people.map(p=>{const l=buildLink(p,allIncomplete[p]);return l?`${p}:\n${l}`:null;}).filter(Boolean);
+  navigator.clipboard.writeText(lines.join('\n\n')).then(()=>toast(`✓ ${lines.length} links copied`));
 }
-document.getElementById('linkModal').classList.add('open');
+
+async function loadResponses(){
+  const url=getAppsScriptUrl();if(!url){toast('⚠️ Paste your Apps Script URL first');return;}
+  document.getElementById('responsesTable').innerHTML='<div class="empty"><div style="font-size:1.4rem">⏳</div>Loading…</div>';
+  try{
+    const res=await fetch(`${url}?action=read`);if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const data=await res.json();if(data.status!=='ok')throw new Error(data.message);
+    const rows=data.data;document.getElementById('respCount').textContent=rows.length;
+    if(!rows.length){document.getElementById('responsesTable').innerHTML='<div class="empty"><div class="ck">📭</div>No responses yet</div>';return;}
+    const headers=Object.keys(rows[0]);
+    document.getElementById('responsesTable').innerHTML=`<table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${headers.map(h=>`<td>${row[h]||'—'}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  }catch(err){document.getElementById('responsesTable').innerHTML=`<div class="empty" style="color:var(--danger)">Error: ${err.message}</div>`;}
 }
-function closeModal() {
-document.getElementById('linkModal').classList.remove('open');
+function exportCSV(){
+  const table=document.querySelector('#responsesTable table');if(!table){toast('No data to export');return;}
+  const rows=Array.from(table.querySelectorAll('tr')).map(tr=>Array.from(tr.querySelectorAll('th,td')).map(c=>`"${c.textContent.replace(/"/g,'""')}"`).join(','));
+  const blob=new Blob([rows.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`responses_${new Date().toISOString().slice(0,10)}.csv`;a.click();toast('⬇ CSV downloaded');
 }
-document.getElementById('linkModal').addEventListener('click', e => {
-if (e.target === e.currentTarget) closeModal();
-});
-function copyShareLink() {
-const val = document.getElementById('shareLink').value;
-if (!val) { toast('⚠️ No link to copy'); return; }
-navigator.clipboard.writeText(val).then(() => toast('✓ Link copied to clipboard'));
-}
-function copyAllLinks() {
-const people = Object.keys(allIncomplete).filter(p => p && p.toLowerCase() !== 'unassigned');
-if (!people.length) { toast('No incomplete entries'); return; }
-const lines = people.map(p => {
-const link = buildLink(p, allIncomplete[p]);
-return link ? `${p}:
-${link}` : null;
-}).filter(Boolean);
-navigator.clipboard.writeText(lines.join('
-')).then(() => toast(`✓ ${lines.length} links copied`));
-}
-// ── Responses ───────────────────────────────────────────
-async function loadResponses() {
-const url = getAppsScriptUrl();
-if (!url) { toast('⚠️ Paste your Apps Script URL in the topbar first'); return; }
-document.getElementById('responsesTable').innerHTML = '<div class="empty"><div style="font-size:1.4rem">⏳</div>Loading…</div>';
-try {
-const res  = await fetch(`${url}?action=read`);
-if (!res.ok) throw new Error(`HTTP ${res.status}`);
-const data = await res.json();
-if (data.status !== 'ok') throw new Error(data.message);
-const rows = data.data;
-document.getElementById('respCount').textContent = rows.length;
-if (!rows.length) { document.getElementById('responsesTable').innerHTML='<div class="empty"><div class="ck">📭</div>No responses yet</div>'; return; }
-const headers = Object.keys(rows[0]);
-document.getElementById('responsesTable').innerHTML = `<table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>
-${rows.map(row=>`<tr>${headers.map(h=>`<td>${row[h]||'—'}</td>`).join('')}</tr>`).join('')}
-</tbody></table>`;
-} catch(err) {
-document.getElementById('responsesTable').innerHTML = `<div class="empty" style="color:var(--danger)">Error: ${err.message}</div>`;
-}
-}
-function exportCSV() {
-const table = document.querySelector('#responsesTable table');
-if (!table) { toast('No data to export'); return; }
-const rows = Array.from(table.querySelectorAll('tr')).map(tr =>
-Array.from(tr.querySelectorAll('th,td')).map(c => `"${c.textContent.replace(/"/g,'""')}"`).join(',')
-);
-const blob = new Blob([rows.join('
-')], { type:'text/csv' });
-const a    = document.createElement('a');
-a.href     = URL.createObjectURL(blob);
-a.download = `responses_${new Date().toISOString().slice(0,10)}.csv`;
-a.click();
-toast('⬇ CSV downloaded');
-}
-// ── Toast ───────────────────────────────────────────────
-function toast(msg) {
-const t = document.createElement('div');
-t.className = 'toast'; t.textContent = msg;
-document.body.appendChild(t);
-setTimeout(() => t.remove(), 3000);
-}
-// ── Init ────────────────────────────────────────────────
+
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
 loadConfig();
 </script>
 </body>
