@@ -5,24 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Incident Data Form</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
-<!-- LZ-String compression library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 <style>
   :root {
-    --ink: #1a1a2e;
-    --ink-soft: #4a4a6a;
-    --ink-ghost: #9090b0;
-    --paper: #fafaf8;
-    --paper2: #f2f2ee;
-    --rule: #e0e0d8;
-    --accent: #4f46e5;
-    --accent-light: #ede9fe;
-    --danger: #dc2626;
-    --success: #059669;
-    --warning: #d97706;
+    --ink: #1a1a2e; --ink-soft: #4a4a6a; --ink-ghost: #9090b0;
+    --paper: #fafaf8; --paper2: #f2f2ee; --rule: #e0e0d8;
+    --accent: #4f46e5; --accent-light: #ede9fe;
+    --danger: #dc2626; --success: #059669; --warning: #d97706;
+    --resolved-bg: #f0fdf4; --resolved-border: #86efac;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'DM Sans',sans-serif; background:var(--paper2); color:var(--ink); min-height:100vh; padding:0 0 80px; }
+  body { font-family:'DM Sans',sans-serif; background:var(--paper2); color:var(--ink); min-height:100vh; padding:0 0 100px; }
 
   .top-band { background:var(--ink); color:white; padding:18px 32px; display:flex; align-items:center; justify-content:space-between; }
   .brand { font-family:'Instrument Serif',serif; font-size:1.15rem; opacity:.9; }
@@ -44,19 +37,47 @@
 
   .form-wrap { max-width:760px; margin:28px auto 0; padding:0 24px; }
 
-  .incident-card { background:white; border-radius:12px; border:1px solid var(--rule); margin-bottom:20px; overflow:hidden; transition:box-shadow .2s; }
+  /* ── Incident card ── */
+  .incident-card { background:white; border-radius:12px; border:1px solid var(--rule); margin-bottom:20px; overflow:hidden; transition:box-shadow .2s, border-color .2s; }
   .incident-card.filled { border-color:#bbf7d0; box-shadow:0 0 0 1px #bbf7d0; }
+  .incident-card.is-resolved { border-color:var(--resolved-border); }
+
   .incident-head { padding:16px 22px; background:var(--paper2); border-bottom:1px solid var(--rule); display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .incident-card.is-resolved .incident-head { background:var(--resolved-bg); }
   .incident-sr { font-weight:600; font-size:.85rem; color:var(--accent); }
   .incident-desc { font-size:.78rem; color:var(--ink-soft); margin-top:3px; line-height:1.4; }
-  .field-count-badge { font-size:.68rem; padding:3px 9px; border-radius:12px; background:var(--accent-light); color:var(--accent); white-space:nowrap; flex-shrink:0; font-weight:500; }
 
-  .incident-fields { padding:18px 22px; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .badges { display:flex; gap:6px; align-items:center; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
+  .field-count-badge { font-size:.68rem; padding:3px 9px; border-radius:12px; background:var(--accent-light); color:var(--accent); white-space:nowrap; font-weight:500; }
+  .badge-resolved { font-size:.65rem; padding:3px 9px; border-radius:12px; background:#d1fae5; color:var(--success); white-space:nowrap; font-weight:600; border:1px solid #6ee7b7; }
+  .badge-rows { font-size:.65rem; padding:3px 8px; border-radius:12px; background:#f3e8ff; color:#7c3aed; white-space:nowrap; font-weight:500; }
+
+  /* Resolved notice inside card */
+  .resolved-notice {
+    margin:14px 22px 0;
+    background:#ecfdf5; border:1px solid #6ee7b7; border-radius:8px;
+    padding:10px 14px; font-size:.78rem; color:#065f46;
+    display:flex; gap:8px; align-items:flex-start;
+  }
+  .resolved-notice strong { color:#047857; }
+
+  /* Section divider inside a card */
+  .fields-section-title {
+    padding:10px 22px 0;
+    font-size:.65rem; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-ghost); font-weight:600;
+    display:flex; align-items:center; gap:8px;
+  }
+  .fields-section-title::after { content:''; flex:1; height:1px; background:var(--rule); }
+
+  .incident-fields { padding:14px 22px 18px; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   .field-full { grid-column:1/-1; }
   .field-group { display:flex; flex-direction:column; gap:6px; }
   .field-label { font-size:.68rem; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-ghost); font-weight:500; display:flex; align-items:center; gap:4px; }
   .req-star { color:var(--danger); }
   .opt-tag { font-size:.6rem; background:#f3e8ff; color:#7c3aed; padding:1px 5px; border-radius:3px; text-transform:none; letter-spacing:0; font-weight:400; }
+  /* Extra required fields added for resolved incidents */
+  .resolved-req-tag { font-size:.6rem; background:#d1fae5; color:var(--success); padding:1px 5px; border-radius:3px; text-transform:none; letter-spacing:0; font-weight:600; }
 
   input[type="text"], input[type="date"], textarea, select {
     font-family:'DM Sans',sans-serif; font-size:.85rem; color:var(--ink);
@@ -111,20 +132,17 @@
   <div class="form-status-badge" id="topBadge">Loading…</div>
 </div>
 
-<!-- Loading -->
 <div class="loading-screen" id="loadingScreen">
   <div class="spinner"></div>
   <p style="color:#4a4a6a;font-size:.88rem;">Loading your form…</p>
 </div>
 
-<!-- Error -->
 <div class="error-screen" id="errorScreen" style="display:none;">
   <h2>Could Not Load Form</h2>
   <p id="errorMsg">This link appears to be invalid or expired. Please ask your manager to resend your form link.</p>
   <div class="error-detail" id="errorDetail" style="display:none;"></div>
 </div>
 
-<!-- Main form -->
 <div id="mainContent" style="display:none;">
   <div class="hero">
     <div class="hero-label">Data Collection Request</div>
@@ -149,19 +167,17 @@
   </div>
 
   <div class="form-wrap">
-    <div class="notice">⚠️ Fields marked <strong>*</strong> are required. Fill every field accurately — your data goes directly into the team tracker.</div>
+    <div class="notice">⚠️ Fields marked <strong>*</strong> are required. If an incident is <strong>Resolved or Closed</strong>, all fields (including Close Date, Detail Description &amp; Solution, and SAAS Support SR) become mandatory.</div>
     <div id="formContainer"></div>
   </div>
 </div>
 
-<!-- Success -->
 <div class="success-screen" id="successScreen">
   <div class="success-icon">✓</div>
   <div class="success-title">All done!</div>
   <p class="success-sub" id="successSub"></p>
 </div>
 
-<!-- Sticky footer -->
 <div class="sticky-footer" id="stickyFooter" style="display:none;">
   <div class="footer-status">
     <strong id="footerFilled">0</strong> of <strong id="footerTotal">0</strong> required fields filled
@@ -175,8 +191,21 @@
 // ══════════════════════════════════════════════════════════════
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZBSM7QtZ_J3KcIj98q2fRWVT8e7b6K-hcIQdc5LV2PX0dDmhe90mFjOJKCR5GTyqgKw/exec";
 
-// ── Field config ───────────────────────────────────────────────
-const OPTIONAL_FIELDS = ['Module','Close Date','Detail Description and Solution','SAAS Support SR (if any)', 'Current Owner'];
+// Fields that are normally optional but become REQUIRED when status is Resolved/Closed
+const RESOLVED_EXTRA_REQUIRED = [
+  'Close Date',
+  'Detail Description and Solution',
+  'SAAS Support SR (if any)'
+];
+
+// Fields that are always optional regardless of status
+const ALWAYS_OPTIONAL = ['Module', 'Current Owner'];
+
+// All optional fields (union — used to decide initial label)
+const OPTIONAL_FIELDS = ['Module', 'Close Date', 'Detail Description and Solution', 'SAAS Support SR (if any)', 'Current Owner'];
+
+// Statuses that trigger full required-field expansion
+const RESOLVED_STATUSES = ['Resolved', 'Closed'];
 
 const FIELD_CONFIG = {
   'SR Open Date':    { type:'date' },
@@ -203,18 +232,17 @@ const FIELD_CONFIG = {
 const WIDE_FIELDS = ['Comments','Description','Detail Description and Solution','SAAS Support SR (if any)','CSU','Requested By','Current Owner'];
 
 // ── State ──────────────────────────────────────────────────────
-let formData      = null;
-let totalRequired = 0;
+let formData = null;
+// Map of ei -> Set of fields that are currently required (dynamic, changes when Status changes)
+const dynamicRequired = {};
 
-// ── Init — decompress payload from URL ────────────────────────
+// ── Init ──────────────────────────────────────────────────────
 function init() {
   try {
-    const params      = new URLSearchParams(window.location.search);
-    const compressed  = params.get('d'); // 'd' = compressed data param
-
+    const params     = new URLSearchParams(window.location.search);
+    const compressed = params.get('d');
     if (!compressed) throw new Error('No data parameter found in URL');
 
-    // Decompress using LZ-String
     const jsonStr = LZString.decompressFromEncodedURIComponent(compressed);
     if (!jsonStr) throw new Error('Decompression failed — link may be corrupted or truncated');
 
@@ -222,111 +250,225 @@ function init() {
     if (!formData.person || !Array.isArray(formData.entries) || !formData.entries.length) {
       throw new Error('Invalid payload structure');
     }
-
     renderForm();
-
   } catch(err) {
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('errorScreen').style.display   = 'block';
-    document.getElementById('errorMsg').textContent =
-      'Could not load your form. Please ask your manager to resend the link.';
+    document.getElementById('errorMsg').textContent = 'Could not load your form. Please ask your manager to resend the link.';
     document.getElementById('errorDetail').textContent = 'Error: ' + err.message;
     document.getElementById('errorDetail').style.display = 'block';
   }
 }
 
-// ── Render form ────────────────────────────────────────────────
+// ── Render ────────────────────────────────────────────────────
 function renderForm() {
   document.getElementById('heroName').textContent      = formData.person;
   document.getElementById('metaIncidents').textContent = formData.entries.length;
   document.getElementById('metaDate').textContent      = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
 
-  totalRequired = 0;
-  formData.entries.forEach(entry => {
-    entry.fields.forEach(f => { if (!OPTIONAL_FIELDS.includes(f)) totalRequired++; });
+  // Count total fields across all entries
+  const totalAll = formData.entries.reduce((s,e) => s + e.fields.length, 0);
+  document.getElementById('metaFields').textContent = totalAll;
+
+  // Build initial dynamicRequired sets — required = not in ALWAYS_OPTIONAL
+  formData.entries.forEach((entry, ei) => {
+    dynamicRequired[ei] = new Set(
+      entry.fields.filter(f => !ALWAYS_OPTIONAL.includes(f))
+    );
   });
 
-  const totalAll = formData.entries.reduce((s,e) => s + e.fields.length, 0);
-  document.getElementById('metaFields').textContent    = totalAll;
-  document.getElementById('progressTotal').textContent = totalRequired;
-  document.getElementById('footerTotal').textContent   = totalRequired;
-
   const container = document.getElementById('formContainer');
-  container.innerHTML = formData.entries.map((entry, ei) => {
-    const fieldRows = entry.fields.map(field => {
-      const cfg    = FIELD_CONFIG[field] || { type:'text' };
-      const isOpt  = OPTIONAL_FIELDS.includes(field);
-      const isWide = WIDE_FIELDS.includes(field) || cfg.type === 'textarea';
-      const fid    = `f_${ei}_${field.replace(/\W+/g,'_')}`;
-
-      let inputHtml = '';
-      if (cfg.type === 'select') {
-        inputHtml = `<div class="select-wrap">
-          <select id="${fid}" data-ei="${ei}" data-field="${field}" data-required="${!isOpt}" onchange="onFieldChange(this)">
-            <option value="">— Select —</option>
-            ${cfg.options.map(o => `<option value="${o}">${o}</option>`).join('')}
-          </select></div>`;
-      } else if (cfg.type === 'textarea') {
-        inputHtml = `<textarea id="${fid}" data-ei="${ei}" data-field="${field}" data-required="${!isOpt}"
-          placeholder="Enter ${field.toLowerCase()}…" oninput="onFieldChange(this)"></textarea>`;
-      } else if (cfg.type === 'date') {
-        inputHtml = `<input type="date" id="${fid}" data-ei="${ei}" data-field="${field}" data-required="${!isOpt}" onchange="onFieldChange(this)">`;
-      } else {
-        inputHtml = `<input type="text" id="${fid}" data-ei="${ei}" data-field="${field}" data-required="${!isOpt}"
-          placeholder="${cfg.placeholder || ('Enter ' + field.toLowerCase() + '…')}" oninput="onFieldChange(this)">`;
-      }
-
-      return `<div class="field-group${isWide ? ' field-full' : ''}">
-        <label class="field-label" for="${fid}">
-          ${field}
-          ${isOpt ? '<span class="opt-tag">optional</span>' : '<span class="req-star">*</span>'}
-        </label>
-        ${inputHtml}
-      </div>`;
-    }).join('');
-
-    return `<div class="incident-card" id="card_${ei}">
-      <div class="incident-head">
-        <div>
-          <div class="incident-sr">SR# ${entry.sr}</div>
-          <div class="incident-desc">${entry.description}</div>
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
-          <div class="field-count-badge">${entry.fields.length} field${entry.fields.length > 1 ? 's' : ''}</div>
-          ${(entry.rowCount||1) > 1 ? `<div style="font-size:.65rem;padding:3px 8px;border-radius:12px;background:#f3e8ff;color:#7c3aed;white-space:nowrap;font-weight:500;">${entry.rowCount} rows</div>` : ''}
-        </div>
-      </div>
-      <div class="incident-fields">${fieldRows}</div>
-    </div>`;
-  }).join('');
+  container.innerHTML = formData.entries.map((entry, ei) => buildCardHTML(entry, ei)).join('');
 
   document.getElementById('loadingScreen').style.display = 'none';
   document.getElementById('mainContent').style.display   = 'block';
   document.getElementById('stickyFooter').style.display  = 'flex';
-  document.getElementById('topBadge').textContent = `${formData.entries.length} incidents`;
+  document.getElementById('topBadge').textContent = `${formData.entries.length} incident${formData.entries.length>1?'s':''}`;
+
   updateProgress();
 }
 
-// ── Field change ───────────────────────────────────────────────
+// Build the full HTML for one incident card
+function buildCardHTML(entry, ei) {
+  // Separate fields into two groups:
+  // Group A: Fields that were originally in the entry (missing fields from analysis)
+  // Group B: Resolved-extra fields not already in the entry (added when status is resolved)
+  const originalFields = entry.fields;
+
+  // Which resolved-extra fields are NOT already in the entry?
+  const resolvedExtras = RESOLVED_EXTRA_REQUIRED.filter(f => !originalFields.includes(f));
+
+  // All fields to show = original + resolved extras
+  const allFields = [...originalFields, ...resolvedExtras];
+
+  const fieldRows = allFields.map(field => buildFieldHTML(field, ei, resolvedExtras.includes(field))).join('');
+
+  const hasResolvedExtras = resolvedExtras.length > 0;
+
+  return `<div class="incident-card" id="card_${ei}">
+    <div class="incident-head">
+      <div>
+        <div class="incident-sr">SR# ${entry.sr}</div>
+        <div class="incident-desc">${entry.description}</div>
+      </div>
+      <div class="badges">
+        <div class="field-count-badge" id="badge_count_${ei}">${entry.fields.length} field${entry.fields.length>1?'s':''}</div>
+        ${(entry.rowCount||1)>1 ? `<div class="badge-rows">${entry.rowCount} rows</div>` : ''}
+        <div class="badge-resolved" id="badge_resolved_${ei}" style="display:none;">✓ Resolved</div>
+      </div>
+    </div>
+    ${hasResolvedExtras ? `
+    <div class="resolved-notice" id="resolvedNotice_${ei}" style="display:none;">
+      <span>✅</span>
+      <div>This incident is <strong>Resolved/Closed</strong> — the fields below marked <strong style="color:var(--success);">resolved-req</strong> are now required to complete closure documentation.</div>
+    </div>` : ''}
+    <div class="incident-fields" id="fields_${ei}">${fieldRows}</div>
+  </div>`;
+}
+
+// Build a single field's HTML
+function buildFieldHTML(field, ei, isResolvedExtra) {
+  const cfg    = FIELD_CONFIG[field] || { type:'text' };
+  const isOpt  = ALWAYS_OPTIONAL.includes(field);
+  const isWide = WIDE_FIELDS.includes(field) || cfg.type === 'textarea';
+  const fid    = `f_${ei}_${field.replace(/\W+/g,'_')}`;
+
+  // For resolved-extra fields: hidden until Status becomes Resolved/Closed
+  const wrapId    = `wrap_${ei}_${field.replace(/\W+/g,'_')}`;
+  const hiddenCls = isResolvedExtra ? ' resolved-extra-field' : '';
+  const hiddenStyle = isResolvedExtra ? ' style="display:none;"' : '';
+
+  let inputHtml = '';
+  if (cfg.type === 'select') {
+    // Special handler for Status field
+    const onchangeHandler = field === 'Status'
+      ? `onchange="onStatusChange(this,${ei})"`
+      : `onchange="onFieldChange(this)"`;
+    inputHtml = `<div class="select-wrap">
+      <select id="${fid}" data-ei="${ei}" data-field="${field}" data-required="${!isOpt}" ${onchangeHandler}>
+        <option value="">— Select —</option>
+        ${cfg.options.map(o=>`<option value="${o}">${o}</option>`).join('')}
+      </select></div>`;
+  } else if (cfg.type === 'textarea') {
+    inputHtml = `<textarea id="${fid}" data-ei="${ei}" data-field="${field}" data-required="${!isOpt}"
+      placeholder="Enter ${field.toLowerCase()}…" oninput="onFieldChange(this)"></textarea>`;
+  } else if (cfg.type === 'date') {
+    inputHtml = `<input type="date" id="${fid}" data-ei="${ei}" data-field="${field}" data-required="${!isOpt}" onchange="onFieldChange(this)">`;
+  } else {
+    inputHtml = `<input type="text" id="${fid}" data-ei="${ei}" data-field="${field}" data-required="${!isOpt}"
+      placeholder="${cfg.placeholder || ('Enter ' + field.toLowerCase() + '…')}" oninput="onFieldChange(this)">`;
+  }
+
+  // Label tag for optional / required
+  let labelTag = '';
+  if (isResolvedExtra) {
+    labelTag = '<span class="resolved-req-tag">resolved-req</span>';
+  } else if (isOpt) {
+    labelTag = '<span class="opt-tag">optional</span>';
+  } else {
+    labelTag = '<span class="req-star">*</span>';
+  }
+
+  return `<div class="field-group${isWide?' field-full':''}${hiddenCls}" id="${wrapId}"${hiddenStyle}>
+    <label class="field-label" for="${fid}">
+      ${field} ${labelTag}
+    </label>
+    ${inputHtml}
+  </div>`;
+}
+
+// ── Status change handler ─────────────────────────────────────
+function onStatusChange(el, ei) {
+  el.classList.toggle('filled-field', el.value.trim().length > 0);
+
+  const entry        = formData.entries[ei];
+  const isResolved   = RESOLVED_STATUSES.includes(el.value);
+
+  // Toggle resolved badge & notice
+  const badgeEl  = document.getElementById(`badge_resolved_${ei}`);
+  const noticeEl = document.getElementById(`resolvedNotice_${ei}`);
+  const cardEl   = document.getElementById(`card_${ei}`);
+
+  if (badgeEl)  badgeEl.style.display  = isResolved ? 'inline-flex' : 'none';
+  if (noticeEl) noticeEl.style.display = isResolved ? 'flex' : 'none';
+  if (cardEl)   cardEl.classList.toggle('is-resolved', isResolved);
+
+  // Which resolved-extra fields are not already in the entry?
+  const resolvedExtras = RESOLVED_EXTRA_REQUIRED.filter(f => !entry.fields.includes(f));
+
+  resolvedExtras.forEach(field => {
+    const wrapId  = `wrap_${ei}_${field.replace(/\W+/g,'_')}`;
+    const fid     = `f_${ei}_${field.replace(/\W+/g,'_')}`;
+    const wrapEl  = document.getElementById(wrapId);
+    const inputEl = document.getElementById(fid);
+    if (!wrapEl || !inputEl) return;
+
+    if (isResolved) {
+      // Show the field and mark it required
+      wrapEl.style.display = '';
+      inputEl.dataset.required = 'true';
+      dynamicRequired[ei].add(field);
+    } else {
+      // Hide and mark not required
+      wrapEl.style.display = 'none';
+      inputEl.dataset.required = 'false';
+      dynamicRequired[ei].delete(field);
+    }
+  });
+
+  // For fields that WERE already in the entry and are in RESOLVED_EXTRA_REQUIRED,
+  // update their label indicator and required attribute
+  RESOLVED_EXTRA_REQUIRED.filter(f => entry.fields.includes(f)).forEach(field => {
+    const fid    = `f_${ei}_${field.replace(/\W+/g,'_')}`;
+    const inputEl = document.getElementById(fid);
+    if (!inputEl) return;
+    if (isResolved) {
+      inputEl.dataset.required = 'true';
+      dynamicRequired[ei].add(field);
+    } else {
+      // Revert to optional behaviour if field was originally optional
+      inputEl.dataset.required = 'false';
+      dynamicRequired[ei].delete(field);
+    }
+  });
+
+  updateProgress();
+  checkCardFilled(ei);
+}
+
+// ── Field change ──────────────────────────────────────────────
 function onFieldChange(el) {
   el.classList.toggle('filled-field', el.value.trim().length > 0);
-  const card    = document.getElementById(`card_${el.dataset.ei}`);
-  const allReq  = card.querySelectorAll('[data-required="true"]');
-  card.classList.toggle('filled', Array.from(allReq).every(i => i.value.trim()));
+  checkCardFilled(parseInt(el.dataset.ei));
   updateProgress();
 }
 
-function updateProgress() {
-  let filled = 0;
-  document.querySelectorAll('[data-required="true"]').forEach(el => { if (el.value.trim()) filled++; });
-  const pct = totalRequired > 0 ? Math.round((filled / totalRequired) * 100) : 0;
-  document.getElementById('progressFill').style.width  = pct + '%';
-  document.getElementById('progressDone').textContent  = filled;
-  document.getElementById('footerFilled').textContent  = filled;
-  document.getElementById('submitBtn').disabled = (filled < totalRequired);
+function checkCardFilled(ei) {
+  const card   = document.getElementById(`card_${ei}`);
+  const allReq = card.querySelectorAll('[data-required="true"]');
+  card.classList.toggle('filled', allReq.length > 0 && Array.from(allReq).every(i => i.value.trim()));
 }
 
-// ── Submit ─────────────────────────────────────────────────────
+// ── Progress ──────────────────────────────────────────────────
+function updateProgress() {
+  // Count all currently-required inputs across all cards
+  let total  = 0;
+  let filled = 0;
+  document.querySelectorAll('[data-required="true"]').forEach(el => {
+    total++;
+    if (el.value.trim()) filled++;
+  });
+
+  const pct = total > 0 ? Math.round((filled / total) * 100) : 0;
+  document.getElementById('progressFill').style.width  = pct + '%';
+  document.getElementById('progressDone').textContent  = filled;
+  document.getElementById('progressTotal').textContent = total;
+  document.getElementById('footerFilled').textContent  = filled;
+  document.getElementById('footerTotal').textContent   = total;
+  document.getElementById('submitBtn').disabled = (filled < total);
+}
+
+// ── Submit ────────────────────────────────────────────────────
 async function submitForm() {
   const btn = document.getElementById('submitBtn');
 
@@ -346,13 +488,20 @@ async function submitForm() {
   btn.disabled    = true;
   btn.textContent = 'Submitting…';
 
-  // Collect filled values
+  // Collect all visible field values per entry
   const entries = formData.entries.map((entry, ei) => {
+    // All fields to collect = original + resolved extras that are now visible
+    const resolvedExtras = RESOLVED_EXTRA_REQUIRED.filter(f => !entry.fields.includes(f));
+    const allFields = [...entry.fields, ...resolvedExtras];
+
     const fields = {};
-    entry.fields.forEach(field => {
-      const fid = `f_${ei}_${field.replace(/\W+/g,'_')}`;
-      const el  = document.getElementById(fid);
-      if (el && el.value.trim()) fields[field] = el.value.trim();
+    allFields.forEach(field => {
+      const fid   = `f_${ei}_${field.replace(/\W+/g,'_')}`;
+      const el    = document.getElementById(fid);
+      // Only include if visible and has a value
+      if (el && el.value.trim() && el.closest('.field-group') && el.closest('.field-group').style.display !== 'none') {
+        fields[field] = el.value.trim();
+      }
     });
     return { sr: entry.sr, description: entry.description, fields, rowCount: entry.rowCount || 1 };
   });
@@ -372,14 +521,12 @@ async function submitForm() {
     const result = await res.json();
     if (result.status !== 'ok') throw new Error(result.message || 'Submission failed');
 
-    // Show success screen
     document.getElementById('mainContent').style.display   = 'none';
     document.getElementById('stickyFooter').style.display  = 'none';
     document.getElementById('successScreen').style.display = 'block';
     document.getElementById('successSub').textContent =
-      `Your data for ${entries.length} incident${entries.length > 1 ? 's' : ''} has been submitted successfully. Your manager will update the tracker. You can close this tab.`;
+      `Your data for ${entries.length} incident${entries.length>1?'s':''} has been submitted successfully. Your manager will update the tracker. You can close this tab.`;
     document.getElementById('topBadge').textContent = 'Submitted ✓';
-
   } catch(err) {
     btn.disabled    = false;
     btn.textContent = 'Submit Data →';
@@ -387,7 +534,6 @@ async function submitForm() {
   }
 }
 
-// ── Start ──────────────────────────────────────────────────────
 init();
 </script>
 </body>
