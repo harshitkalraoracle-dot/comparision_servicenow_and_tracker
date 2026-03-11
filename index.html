@@ -525,7 +525,52 @@ function analyze(){
   renderMissing(missing);renderTrackerOnly(trackerOnly);renderMismatches(mismatches);
   renderSummary(allIncomplete,trData);renderDetailed(allIncomplete);renderDups(dups);
   renderClosureGap(closureGap);
-  buildFormGen(allIncomplete);
+
+  // ── Merge closure fields into allIncomplete for form generation ──────────────
+  // For every incident in closureGap that is in the tracker (by a real person),
+  // ensure Close Date and Detail Description and Solution appear in their form
+  // entry — but only if those fields are not already filled in the tracker row.
+  const CLOSURE_FIELDS = ['Close Date','Detail Description and Solution'];
+
+  // Build a deep copy so we don't mutate allIncomplete display data
+  const formIncomplete = JSON.parse(JSON.stringify(allIncomplete));
+
+  closureGap.forEach(gap=>{
+    if(gap.trStatus === 'NOT IN TRACKER') return; // can't assign a form for a non-existent row
+    const person = gap.by;
+    if(!person || person==='—') return;
+
+    // Which closure fields are actually missing for this incident in the tracker?
+    const trRow = trMap.get(gap.inc);
+    const missingClosureFields = CLOSURE_FIELDS.filter(f=>{
+      const val = trRow ? (trRow[f]||'').toString().trim() : '';
+      return !val || val==='None';
+    });
+    if(!missingClosureFields.length) return;
+
+    if(!formIncomplete[person]) formIncomplete[person]=[];
+
+    // Find if this incident already has an entry for this person
+    const existing = formIncomplete[person].find(e=>e.sr===gap.inc);
+    if(existing){
+      // Add any missing closure fields not already listed
+      missingClosureFields.forEach(f=>{
+        if(!existing.fields.includes(f)) existing.fields.push(f);
+      });
+      existing.isClosureEntry = true;
+    } else {
+      // Brand new entry — only the closure fields are needed
+      formIncomplete[person].push({
+        sr:             gap.inc,
+        description:    gap.desc,
+        fields:         [...missingClosureFields],
+        rowCount:       1,
+        isClosureEntry: true   // flag so form can show context
+      });
+    }
+  });
+
+  buildFormGen(formIncomplete);
 }
 
 function pc(p){const s=(p||'').toString().toLowerCase();if(s.includes('p1')||s.includes('critical'))return 'p-high';if(s.includes('p2')||s.includes('high'))return 'p-high';if(s.includes('p3')||s.includes('medium'))return 'p-med';if(s.includes('p4')||s.includes('low'))return 'p-low';return '';}
@@ -672,7 +717,17 @@ function buildFormGen(incomplete){
 }
 
 function buildLink(person,entries){
-  const payload={person,generatedAt:new Date().toISOString(),entries:entries.map(e=>({sr:e.sr,description:e.description,fields:e.fields,rowCount:e.rowCount||1}))};
+  const payload={
+    person,
+    generatedAt: new Date().toISOString(),
+    entries: entries.map(e=>({
+      sr:             e.sr,
+      description:    e.description,
+      fields:         e.fields,
+      rowCount:       e.rowCount||1,
+      isClosureEntry: e.isClosureEntry||false
+    }))
+  };
   try{const json=JSON.stringify(payload);const compressed=LZString.compressToEncodedURIComponent(json);return `${GITHUB_PAGES_BASE}/form.html?d=${compressed}`;}catch(err){return null;}
 }
 
