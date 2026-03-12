@@ -67,7 +67,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .btn-outline:hover{color:var(--text);border-color:var(--text-dim);}
 .btn-success{background:rgba(52,211,153,.1);color:var(--success);border:1px solid rgba(52,211,153,.25);}
 .btn-success:hover{background:rgba(52,211,153,.2);}
-.stats-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:28px;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
 .stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 16px;text-align:center;}
 .stat-n{font-family:'Instrument Serif',serif;font-size:2.2rem;margin-bottom:4px;}
 .stat-l{font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);}
@@ -227,6 +227,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
         <div class="stat"><div class="stat-n" id="sn4" style="color:#60a5fa">0</div><div class="stat-l">Incomplete Entries</div></div>
         <div class="stat"><div class="stat-n" id="sn5" style="color:var(--purple)">0</div><div class="stat-l">Duplicates</div></div>
         <div class="stat"><div class="stat-n" id="sn6" style="color:#f97316">0</div><div class="stat-l">Closure Status Gap</div></div>
+        <div class="stat"><div class="stat-n" id="sn7" style="color:#e879f9">0</div><div class="stat-l">Owner Mismatches</div></div>
       </div>
       <div class="formgen-panel" id="formgenPanel" style="display:none;">
         <h2>📤 Send Data Collection Forms</h2>
@@ -245,6 +246,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
       <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-blue"></div>Incomplete Entries — Detailed<span class="pill pill-blue" id="c5">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t5"></div></div></div>
       <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-purple"></div>Duplicate Entries<span class="pill pill-purple" id="c6">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t6"></div></div></div>
       <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot" style="background:#f97316;box-shadow:0 0 8px #f97316;"></div>Closed/Resolved in ServiceNow — Status Gap in Tracker<span class="pill" style="background:rgba(249,115,22,.12);color:#f97316;border:1px solid rgba(249,115,22,.25);" id="c7">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t7"></div></div></div>
+      <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot" style="background:#e879f9;box-shadow:0 0 8px #e879f9;"></div>Owner Mismatches — SN Assigned To vs Tracker Worked By<span class="pill" style="background:rgba(232,121,249,.12);color:#e879f9;border:1px solid rgba(232,121,249,.25);" id="c8">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t8"></div></div></div>
     </div>
   </div>
 
@@ -516,15 +518,50 @@ function analyze(){
     }
   });
 
+  // ── Owner mismatches: SN "Assigned to" vs Tracker "Worked By" ───────────────
+  // Flag both genuine reassignments AND name typos/variants (same person, different spelling)
+  function fuzzyMatch(a,b){
+    // Normalise: lowercase, collapse spaces, strip punctuation
+    const n=s=>s.toLowerCase().replace(/[^a-z\s]/g,'').replace(/\s+/g,' ').trim();
+    const na=n(a),nb=n(b);
+    if(na===nb) return true;
+    // One name is a substring of the other (handles middle-name omissions)
+    if(na.includes(nb)||nb.includes(na)) return true;
+    // Check if first+last tokens overlap enough (handles transpositions / extra middle name)
+    const ta=na.split(' '),tb=nb.split(' ');
+    const shared=ta.filter(w=>w.length>2&&tb.includes(w));
+    return shared.length>=2;
+  }
+  const ownerMismatches=[];
+  snData.forEach(r=>{
+    const s=getSRNum(r,true);
+    if(!s||!trMap.has(s)) return;
+    const tr=trMap.get(s);
+    const snOwner=(r['Assigned to']||'').trim();
+    const trOwner=(tr['Worked By']||'').trim();
+    if(!snOwner||!trOwner||snOwner==='None'||trOwner==='None') return;
+    if(snOwner.toLowerCase()===trOwner.toLowerCase()) return;
+    const isTypo=fuzzyMatch(snOwner,trOwner);
+    ownerMismatches.push({
+      inc:     s,
+      snOwner, trOwner, isTypo,
+      priority:(r['Priority']||'').trim(),
+      snState: (r['Incident state']||'').trim(),
+      trStatus:(tr['Status']||'').trim(),
+      desc:    (tr['Description']||r['Short description']||'').slice(0,70)
+    });
+  });
+
   document.getElementById('sn1').textContent=missing.length;
   document.getElementById('sn2').textContent=trackerOnly.length;
   document.getElementById('sn3').textContent=mismatches.length;
   document.getElementById('sn4').textContent=Object.values(allIncomplete).reduce((s,a)=>s+a.length,0);
   document.getElementById('sn5').textContent=Object.keys(dups).length;
   document.getElementById('sn6').textContent=closureGap.length;
+  document.getElementById('sn7').textContent=ownerMismatches.length;
   renderMissing(missing);renderTrackerOnly(trackerOnly);renderMismatches(mismatches);
   renderSummary(allIncomplete,trData);renderDetailed(allIncomplete);renderDups(dups);
-  renderClosureGap(closureGap);
+  renderClosureGap(closureGap);renderOwnerMismatches(ownerMismatches);
 
   // ── Merge closure fields into allIncomplete for form generation ──────────────
   // For every incident in closureGap that is in the tracker (by a real person),
@@ -701,7 +738,56 @@ function renderClosureGap(data){
   c.innerHTML = html;
 }
 
-function buildFormGen(incomplete){
+function renderOwnerMismatches(data){
+  document.getElementById('c8').textContent = data.length;
+  const c = document.getElementById('t8');
+  if(!data.length){ c.innerHTML = emptyMsg('All incident owners match between ServiceNow and Tracker'); return; }
+
+  const typos    = data.filter(r=>r.isTypo);
+  const genuine  = data.filter(r=>!r.isTypo);
+
+  const priorityClass = r => {
+    const p = r.priority.toLowerCase();
+    if(p.includes('critical')||p.includes('p1')) return 'prio-critical';
+    if(p.includes('high')||p.includes('p2'))     return 'prio-high';
+    if(p.includes('medium')||p.includes('p3'))   return 'prio-med';
+    return 'prio-low';
+  };
+
+  const buildTable = rows => `
+    <table><thead><tr>
+      <th>Incident#</th><th>Priority</th><th>SN State</th>
+      <th>SN — Assigned To</th><th>Tracker — Worked By</th><th>Description</th>
+    </tr></thead><tbody>
+    ${rows.map(r=>`<tr>
+      <td><strong>${r.inc}</strong></td>
+      <td class="${priorityClass(r)}">${r.priority||'—'}</td>
+      <td style="color:var(--text-dim);font-size:.8em;">${r.snState}</td>
+      <td style="color:#e879f9;font-weight:500;">${r.snOwner}</td>
+      <td style="color:#60a5fa;font-weight:500;">${r.trOwner}</td>
+      <td style="color:var(--text-dim);font-size:.75em;">${r.desc}</td>
+    </tr>`).join('')}
+    </tbody></table>`;
+
+  let html = '';
+
+  if(genuine.length){
+    html += `<div style="font-size:.72rem;font-weight:600;color:#e879f9;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">
+      ⚠ ${genuine.length} incident${genuine.length>1?'s':''} — Different people assigned in SN vs Tracker (possible reassignment not reflected)
+    </div>${buildTable(genuine)}`;
+  }
+
+  if(typos.length){
+    if(genuine.length) html += `<div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;"></div>`;
+    html += `<div style="font-size:.72rem;font-weight:600;color:var(--text-dim);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">
+      ✎ ${typos.length} incident${typos.length>1?'s':''} — Likely same person, name spelled differently (typo / abbreviation)
+    </div>${buildTable(typos)}`;
+  }
+
+  c.innerHTML = html;
+}
+
+
   const people=Object.keys(incomplete).filter(p=>p&&p.toLowerCase()!=='unassigned');
   if(!people.length){document.getElementById('formgenPanel').style.display='none';return;}
   document.getElementById('formgenPanel').style.display='block';
