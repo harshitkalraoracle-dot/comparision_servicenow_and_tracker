@@ -6,6 +6,7 @@
 <title>Incident Tracker — Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
 --bg:#0c0c14; --surface:#13131e; --surface2:#1a1a28; --surface3:#212133;
@@ -389,7 +390,7 @@ function handleFile(type,input){
   processFile(type,file);
 }
 function processFile(type,file){
-  if(!file.name.endsWith('.xlsx')){toast('⚠️ Only .xlsx files accepted');return;}
+  if(!file.name.match(/\.xlsx$/i)){toast('⚠️ Only .xlsx files accepted');return;}
   if(type==='sn') window._snFile=file;
   else            window._trFile=file;
   const el=document.getElementById(type==='sn'?'snName':'trName');
