@@ -318,7 +318,6 @@ tr:hover td{background:rgba(255,255,255,.015);}
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const GITHUB_PAGES_BASE = "https://harshitkalraoracle-dot.github.io/comparision_servicenow_and_tracker";
 
@@ -354,7 +353,7 @@ const OPTIONAL = [
 
 const AVATAR_COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ef4444','#06b6d4'];
 const URL_MAX = 8000;
-let snData=null,trData=null,checkOpt=false,allIncomplete={};
+let snData=null,trData=null,checkOpt=false,allIncomplete={},formIncomplete={};
 window._snFile=null; window._trFile=null;
 
 function saveConfig(){const u=document.getElementById('appsScriptUrl').value.trim();if(u)localStorage.setItem('appsScriptUrl',u);}
@@ -571,7 +570,7 @@ function analyze(){
   const CLOSURE_FIELDS = ['Close Date','Detail Description and Solution'];
 
   // Build a deep copy so we don't mutate allIncomplete display data
-  const formIncomplete = JSON.parse(JSON.stringify(allIncomplete));
+  formIncomplete = JSON.parse(JSON.stringify(allIncomplete));
 
   closureGap.forEach(gap=>{
     if(gap.trStatus === 'NOT IN TRACKER') return; // can't assign a form for a non-existent row
@@ -747,13 +746,7 @@ function renderOwnerMismatches(data){
   const typos    = data.filter(r=>r.isTypo);
   const genuine  = data.filter(r=>!r.isTypo);
 
-  const priorityClass = r => {
-    const p = r.priority.toLowerCase();
-    if(p.includes('critical')||p.includes('p1')) return 'prio-critical';
-    if(p.includes('high')||p.includes('p2'))     return 'prio-high';
-    if(p.includes('medium')||p.includes('p3'))   return 'prio-med';
-    return 'prio-low';
-  };
+  const priorityClass = r => pc(r.priority);
 
   const buildTable = rows => `
     <table><thead><tr>
@@ -789,6 +782,7 @@ function renderOwnerMismatches(data){
 }
 
 
+function buildFormGen(incomplete){
   const people=Object.keys(incomplete).filter(p=>p&&p.toLowerCase()!=='unassigned');
   if(!people.length){document.getElementById('formgenPanel').style.display='none';return;}
   document.getElementById('formgenPanel').style.display='block';
@@ -819,7 +813,8 @@ function buildLink(person,entries){
 }
 
 function openPersonModal(person){
-  const entries=allIncomplete[person];const totalFields=entries.reduce((s,e)=>s+e.fields.length,0);
+  const entries=formIncomplete[person];if(!entries)return;
+  const totalFields=entries.reduce((s,e)=>s+e.fields.length,0);
   document.getElementById('modalTitle').textContent=person;
   document.getElementById('modalSub').textContent=`${entries.length} incomplete incident${entries.length>1?'s':''} · ${totalFields} missing fields`;
   const link=buildLink(person,entries);document.getElementById('shareLink').value=link||'Error building link';
@@ -830,9 +825,9 @@ function closeModal(){document.getElementById('linkModal').classList.remove('ope
 document.getElementById('linkModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
 function copyShareLink(){const v=document.getElementById('shareLink').value;if(!v){toast('⚠️ No link');return;}navigator.clipboard.writeText(v).then(()=>toast('✓ Link copied'));}
 function copyAllLinks(){
-  const people=Object.keys(allIncomplete).filter(p=>p&&p.toLowerCase()!=='unassigned');
+  const people=Object.keys(formIncomplete).filter(p=>p&&p.toLowerCase()!=='unassigned');
   if(!people.length){toast('No incomplete entries');return;}
-  const lines=people.map(p=>{const l=buildLink(p,allIncomplete[p]);return l?`${p}:\n${l}`:null;}).filter(Boolean);
+  const lines=people.map(p=>{const l=buildLink(p,formIncomplete[p]);return l?`${p}:\n${l}`:null;}).filter(Boolean);
   navigator.clipboard.writeText(lines.join('\n\n')).then(()=>toast(`✓ ${lines.length} links copied`));
 }
 
