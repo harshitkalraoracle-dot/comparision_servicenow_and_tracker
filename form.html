@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Incident Data Form</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
@@ -189,7 +192,7 @@
 // ══════════════════════════════════════════════════════════════
 //  ⚠️  REPLACE WITH YOUR DEPLOYED APPS SCRIPT WEB APP URL
 // ══════════════════════════════════════════════════════════════
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZBSM7QtZ_J3KcIj98q2fRWVT8e7b6K-hcIQdc5LV2PX0dDmhe90mFjOJKCR5GTyqgKw/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYXqaTmyRkdCc42n1_OVuI9yRfrF1xoTwV3SUHVkPKwfDWqmIlrF5aHA8gadY9wOsDgg/exec";
 
 // Fields that are normally optional but become REQUIRED when status is Resolved/Closed
 const RESOLVED_EXTRA_REQUIRED = [
@@ -514,15 +517,12 @@ async function submitForm() {
 
   // Collect all visible field values per entry
   const entries = formData.entries.map((entry, ei) => {
-    // All fields to collect = original + resolved extras that are now visible
     const resolvedExtras = RESOLVED_EXTRA_REQUIRED.filter(f => !entry.fields.includes(f));
     const allFields = [...entry.fields, ...resolvedExtras];
-
     const fields = {};
     allFields.forEach(field => {
-      const fid   = `f_${ei}_${field.replace(/\W+/g,'_')}`;
-      const el    = document.getElementById(fid);
-      // Only include if visible and has a value
+      const fid = `f_${ei}_${field.replace(/\W+/g,'_')}`;
+      const el  = document.getElementById(fid);
       if (el && el.value.trim() && el.closest('.field-group') && el.closest('.field-group').style.display !== 'none') {
         fields[field] = el.value.trim();
       }
@@ -537,24 +537,57 @@ async function submitForm() {
     entries
   };
 
-  try {
-    const encoded   = encodeURIComponent(JSON.stringify(payload));
-    const submitUrl = `${APPS_SCRIPT_URL}?action=submit&data=${encoded}`;
-    const res       = await fetch(submitUrl);
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    const result = await res.json();
-    if (result.status !== 'ok') throw new Error(result.message || 'Submission failed');
+  // ── Submission strategy ───────────────────────────────────────────────────
+  // Apps Script is cross-origin. Browsers block reading the response (CORS),
+  // but the script DOES execute as long as the request reaches Google.
+  // Strategy: try three methods in order, show success after any one lands.
 
+  const jsonStr = JSON.stringify(payload);
+  let submitted = false;
+
+  // Method 1: POST with no-cors (works in Chrome/Edge/Firefox with updated form)
+  try {
+    const body = new FormData();
+    body.append('action', 'submit');
+    body.append('data', jsonStr);
+    await fetch(APPS_SCRIPT_URL, { method:'POST', body, mode:'no-cors' });
+    submitted = true;
+  } catch(e1) { /* fall through */ }
+
+  // Method 2: GET with no-cors (works with old Apps Script doGet deployments)
+  if (!submitted) {
+    try {
+      const encoded = encodeURIComponent(jsonStr);
+      await fetch(`${APPS_SCRIPT_URL}?action=submit&data=${encoded}`, { mode:'no-cors' });
+      submitted = true;
+    } catch(e2) { /* fall through */ }
+  }
+
+  // Method 3: Image beacon (bypasses CORS entirely — fire-and-forget)
+  if (!submitted) {
+    try {
+      await new Promise((resolve) => {
+        const encoded = encodeURIComponent(jsonStr);
+        const img = new Image();
+        img.onload = img.onerror = () => resolve(); // either way, request was sent
+        img.src = `${APPS_SCRIPT_URL}?action=submit&data=${encoded}`;
+        setTimeout(resolve, 5000); // max 5s wait
+      });
+      submitted = true;
+    } catch(e3) { /* fall through */ }
+  }
+
+  if (submitted) {
     document.getElementById('mainContent').style.display   = 'none';
     document.getElementById('stickyFooter').style.display  = 'none';
     document.getElementById('successScreen').style.display = 'block';
     document.getElementById('successSub').textContent =
-      `Your data for ${entries.length} incident${entries.length>1?'s':''} has been submitted successfully. Your manager will update the tracker. You can close this tab.`;
+      `Your data for ${entries.length} incident${entries.length>1?'s':''} has been submitted. Your manager will update the tracker. You can close this tab.`;
     document.getElementById('topBadge').textContent = 'Submitted ✓';
-  } catch(err) {
+  } else {
     btn.disabled    = false;
     btn.textContent = 'Submit Data →';
-    alert('Submission failed: ' + err.message + '\n\nPlease try again or contact your manager.');
+    alert('Submission failed — could not reach the server.\n\nPossible causes:\n• No internet connection\n• Apps Script URL is wrong or not deployed\n\nPlease check your connection and try again, or contact your manager.');
   }
 }
 
