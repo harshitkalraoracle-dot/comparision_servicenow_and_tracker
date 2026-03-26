@@ -456,12 +456,14 @@ function analyze(){
     if(sr==='N/A')return; // skip blank rows
     const empty=cols.filter(f=>!(r[f]||'').toString().trim());
     if(!empty.length)return;
+    const status=(r['Status']||'').trim();
     if(!raw[person])raw[person]={};
     if(!raw[person][sr])
-      raw[person][sr]={fields:empty, description:(r['Description']||'N/A'), rowCount:1};
+      raw[person][sr]={fields:empty, description:(r['Description']||'N/A'), rowCount:1, status};
     else{
       raw[person][sr].rowCount++;
       empty.forEach(f=>{if(!raw[person][sr].fields.includes(f))raw[person][sr].fields.push(f);});
+      if(!raw[person][sr].status) raw[person][sr].status=status;
     }
   });
   allIncomplete={};
@@ -469,7 +471,8 @@ function analyze(){
     allIncomplete[p]=Object.keys(raw[p]).map(sr=>({
       sr, fields:raw[p][sr].fields,
       description:raw[p][sr].description,
-      rowCount:raw[p][sr].rowCount
+      rowCount:raw[p][sr].rowCount,
+      status:raw[p][sr].status||''
     }));
   });
 
@@ -806,6 +809,7 @@ function buildLink(person,entries){
       description:    e.description,
       fields:         e.fields,
       rowCount:       e.rowCount||1,
+      status:         e.status||'',
       isClosureEntry: e.isClosureEntry||false
     }))
   };
