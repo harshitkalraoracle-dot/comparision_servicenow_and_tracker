@@ -273,11 +273,16 @@ function renderForm() {
   const totalAll = formData.entries.reduce((s,e) => s + e.fields.length, 0);
   document.getElementById('metaFields').textContent = totalAll;
 
-  // Build initial dynamicRequired sets — required = not in ALWAYS_OPTIONAL
+  // Build initial dynamicRequired sets
   formData.entries.forEach((entry, ei) => {
-    dynamicRequired[ei] = new Set(
-      entry.fields.filter(f => !ALWAYS_OPTIONAL.includes(f))
-    );
+    const isAlreadyClosed = RESOLVED_STATUSES.includes((entry.status||'').trim());
+    const baseRequired = entry.fields.filter(f => !ALWAYS_OPTIONAL.includes(f));
+    // For already-closed entries, resolved-extra fields that aren't in entry.fields
+    // are shown immediately and must count toward progress from the start
+    const extraRequired = isAlreadyClosed
+      ? RESOLVED_EXTRA_REQUIRED.filter(f => !entry.fields.includes(f))
+      : [];
+    dynamicRequired[ei] = new Set([...baseRequired, ...extraRequired]);
   });
 
   const container = document.getElementById('formContainer');
@@ -295,30 +300,42 @@ function renderForm() {
 function buildCardHTML(entry, ei) {
   const isClosure      = !!entry.isClosureEntry;
   const originalFields = entry.fields;
+  // Is this ticket already Resolved/Closed in the tracker?
+  const isAlreadyClosed = RESOLVED_STATUSES.includes((entry.status||'').trim());
 
-  // For NON-closure cards: append the resolved-extra hidden fields as before.
-  // For closure cards: all fields in the entry are already the exact ones needed
-  // (Close Date, Detail Description and Solution) — show them all as required,
-  // no hidden extras needed.
+  // For closure cards: all fields already set, no extras needed
+  // For already-closed cards: resolved-extra fields that aren't already in the entry
+  //   should be shown immediately (not hidden) since the ticket IS closed
+  // For normal cards: resolved-extra fields stay hidden until user picks Resolved/Closed
   const resolvedExtras = isClosure
     ? []
     : RESOLVED_EXTRA_REQUIRED.filter(f => !originalFields.includes(f));
 
-  const allFields  = [...originalFields, ...resolvedExtras];
-  const fieldRows  = allFields.map(field =>
-    buildFieldHTML(field, ei, resolvedExtras.includes(field), isClosure)
+  const allFields = [...originalFields, ...resolvedExtras];
+  const fieldRows = allFields.map(field =>
+    buildFieldHTML(field, ei, resolvedExtras.includes(field), isClosure, isAlreadyClosed)
   ).join('');
 
   const hasResolvedExtras = resolvedExtras.length > 0;
 
-  // Closure banner shown immediately (no toggle needed)
   const closureBanner = isClosure ? `
     <div class="resolved-notice" style="display:flex;">
       <span>🔒</span>
       <div>This incident is <strong>Closed/Resolved in ServiceNow</strong> — please fill the closure documentation fields below so the Tracker can be updated.</div>
     </div>` : '';
 
-  return `<div class="incident-card${isClosure?' is-resolved':''}" id="card_${ei}">
+  // For already-closed tracker entries, show the resolved notice immediately
+  const alreadyClosedBanner = (!isClosure && isAlreadyClosed) ? `
+    <div class="resolved-notice" id="resolvedNotice_${ei}" style="display:flex;">
+      <span>✅</span>
+      <div>This incident is already <strong>${entry.status}</strong> in the Tracker — closure fields below are required.</div>
+    </div>` : (!isClosure && hasResolvedExtras) ? `
+    <div class="resolved-notice" id="resolvedNotice_${ei}" style="display:none;">
+      <span>✅</span>
+      <div>This incident is <strong>Resolved/Closed</strong> — the fields below marked <strong style="color:var(--success);">resolved-req</strong> are now required to complete closure documentation.</div>
+    </div>` : '';
+
+  return `<div class="incident-card${(isClosure||isAlreadyClosed)?' is-resolved':''}" id="card_${ei}">
     <div class="incident-head">
       <div>
         <div class="incident-sr">SR# ${entry.sr}</div>
@@ -329,15 +346,13 @@ function buildCardHTML(entry, ei) {
         ${(entry.rowCount||1)>1 ? `<div class="badge-rows">${entry.rowCount} rows</div>` : ''}
         ${isClosure
           ? `<div class="badge-resolved" style="display:inline-flex;">🔒 Closure Docs</div>`
-          : `<div class="badge-resolved" id="badge_resolved_${ei}" style="display:none;">✓ Resolved</div>`}
+          : isAlreadyClosed
+            ? `<div class="badge-resolved" style="display:inline-flex;">✓ ${entry.status}</div>`
+            : `<div class="badge-resolved" id="badge_resolved_${ei}" style="display:none;">✓ Resolved</div>`}
       </div>
     </div>
     ${closureBanner}
-    ${!isClosure && hasResolvedExtras ? `
-    <div class="resolved-notice" id="resolvedNotice_${ei}" style="display:none;">
-      <span>✅</span>
-      <div>This incident is <strong>Resolved/Closed</strong> — the fields below marked <strong style="color:var(--success);">resolved-req</strong> are now required to complete closure documentation.</div>
-    </div>` : ''}
+    ${alreadyClosedBanner}
     <div class="incident-fields" id="fields_${ei}">${fieldRows}</div>
   </div>`;
 }
@@ -345,21 +360,20 @@ function buildCardHTML(entry, ei) {
 // Build a single field's HTML
 // isClosure=true  → field belongs to a closure-doc card: always visible, always required, green label
 // isResolvedExtra → field is hidden until user picks Resolved/Closed in the Status dropdown
-function buildFieldHTML(field, ei, isResolvedExtra, isClosure) {
+function buildFieldHTML(field, ei, isResolvedExtra, isClosure, isAlreadyClosed) {
   const cfg    = FIELD_CONFIG[field] || { type:'text' };
-  // On a closure card every field is required regardless of ALWAYS_OPTIONAL
   const isOpt  = isClosure ? false : ALWAYS_OPTIONAL.includes(field);
   const isWide = WIDE_FIELDS.includes(field) || cfg.type === 'textarea';
   const fid    = `f_${ei}_${field.replace(/\W+/g,'_')}`;
-
   const wrapId = `wrap_${ei}_${field.replace(/\W+/g,'_')}`;
 
-  // Closure fields: always visible, always required from the start
-  // Resolved-extra fields: hidden until Status changes, start as not-required
-  // Normal fields: visible, required based on isOpt
-  const hiddenCls   = (!isClosure && isResolvedExtra) ? ' resolved-extra-field' : '';
-  const hiddenStyle = (!isClosure && isResolvedExtra) ? ' style="display:none;"' : '';
-  const startRequired = (!isClosure && isResolvedExtra) ? 'false' : String(!isOpt);
+  // Already-closed entries: resolved-extra fields are visible & required immediately
+  // Normal entries: resolved-extra fields are hidden until user picks Resolved/Closed
+  const forceShow = isAlreadyClosed && isResolvedExtra;
+  const hiddenCls   = (!isClosure && isResolvedExtra && !forceShow) ? ' resolved-extra-field' : '';
+  const hiddenStyle = (!isClosure && isResolvedExtra && !forceShow) ? ' style="display:none;"' : '';
+  const startRequired = (isClosure || forceShow) ? 'true'
+                      : (isResolvedExtra ? 'false' : String(!isOpt));
 
   let inputHtml = '';
   if (cfg.type === 'select') {
@@ -383,8 +397,7 @@ function buildFieldHTML(field, ei, isResolvedExtra, isClosure) {
 
   // Label badge
   let labelTag = '';
-  if (isClosure) {
-    // Closure doc fields: green "closure" badge — always required
+  if (isClosure || forceShow) {
     labelTag = '<span class="resolved-req-tag">closure</span>';
   } else if (isResolvedExtra) {
     labelTag = '<span class="opt-tag" id="lbl_' + fid + '">optional</span>';
