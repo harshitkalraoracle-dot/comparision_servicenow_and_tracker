@@ -843,8 +843,49 @@ async function loadResponses(){
     const data=await res.json();if(data.status!=='ok')throw new Error(data.message);
     const rows=data.data;document.getElementById('respCount').textContent=rows.length;
     if(!rows.length){document.getElementById('responsesTable').innerHTML='<div class="empty"><div class="ck">📭</div>No responses yet</div>';return;}
-    const headers=Object.keys(rows[0]);
-    document.getElementById('responsesTable').innerHTML=`<table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${headers.map(h=>`<td>${row[h]||'—'}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+
+    // Fixed display columns — in the order they appear in the sheet
+    const DISPLAY_COLS = [
+      'Submitted At','Person','SR#','Description',
+      'Incident Category','Type1','CSU','Priority','Severity',
+      'Description (field)','Requested By','Worked By','Status','Comments',
+      'Assignment Date','Module Classification','SR Open Date',
+      'Close Date','Current Owner','Detail Description and Solution',
+      'SAAS Support SR (if any)','Row Count'
+    ];
+
+    // For each row, merge data from fixed columns AND parse "Raw Fields JSON" as fallback
+    // This ensures old submissions (which only had the JSON blob) still display correctly
+    const normalized = rows.map(row => {
+      // Try to parse Raw Fields JSON if present
+      let parsed = {};
+      const rawJson = row['Raw Fields JSON'] || row['raw fields json'] || '';
+      if(rawJson && rawJson.startsWith('{')){
+        try { parsed = JSON.parse(rawJson); } catch(e){}
+      }
+      // Also handle old format where data was stored as a JSON string in the last column
+      // e.g. '{"Type1":"FSR","CSU":"0",...}'
+      const merged = {};
+      DISPLAY_COLS.forEach(col => {
+        const direct = row[col];
+        // Map parsed JSON keys to display columns
+        const fromJson = parsed[col] || parsed[col.replace(' (field)','')] || '';
+        merged[col] = (direct && direct !== '—' && direct !== '') ? direct : (fromJson || '—');
+      });
+      return merged;
+    });
+
+    const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const isEmpty = v => !v || v==='—' || v==='';
+
+    document.getElementById('responsesTable').innerHTML=`<table>
+      <thead><tr>${DISPLAY_COLS.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
+      <tbody>${normalized.map(row=>`<tr>${DISPLAY_COLS.map(col=>{
+        const v = row[col];
+        const empty = isEmpty(v);
+        return `<td style="${empty?'color:var(--text-ghost)':''}">${esc(empty?'—':v)}</td>`;
+      }).join('')}</tr>`).join('')}</tbody>
+    </table>`;
   }catch(err){document.getElementById('responsesTable').innerHTML=`<div class="empty" style="color:var(--danger)">Error: ${err.message}</div>`;}
 }
 function exportCSV(){
