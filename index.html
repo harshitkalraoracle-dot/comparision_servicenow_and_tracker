@@ -342,12 +342,12 @@ function getSRNum(r, isSN) {
 
 // Required columns checked against Tracker rows
 const REQUIRED = [
-  'Incident Category','Type1','CSU','Priority','Severity',
+  'Incident Category','Type','CSU','Priority','Severity',
   'Description','Requested By','Worked By','Status','Comments','Assignment Date'
 ];
 // Optional columns — shown only when the toggle is ON
 const OPTIONAL = [
-  'Module Classification','SR Open Date','Close Date',
+  'Module','SR Open Date','Close Date',
   'Current Owner','Detail Description and Solution','SAAS Support SR (if any)'
 ];
 
@@ -844,45 +844,46 @@ async function loadResponses(){
     const rows=data.data;document.getElementById('respCount').textContent=rows.length;
     if(!rows.length){document.getElementById('responsesTable').innerHTML='<div class="empty"><div class="ck">📭</div>No responses yet</div>';return;}
 
-    // Fixed display columns — in the order they appear in the sheet
+    // Matches exact sheet column order
     const DISPLAY_COLS = [
-      'Submitted At','Person','SR#','Description',
-      'Incident Category','Type1','CSU','Priority','Severity',
-      'Description (field)','Requested By','Worked By','Status','Comments',
-      'Assignment Date','Module Classification','SR Open Date',
-      'Close Date','Current Owner','Detail Description and Solution',
-      'SAAS Support SR (if any)','Row Count'
+      'Timestamp','Person','SR#','Description',
+      'SR Open Date','Assignment Date','Incident Category','Type',
+      'CSU','Priority','Severity','Requested By','Worked By','Status',
+      'Current Owner','Comments','Module','Close Date',
+      'Detail Description and Solution','SAAS Support SR (if any)','Row Count'
     ];
 
-    // For each row, merge data from fixed columns AND parse "Raw Fields JSON" as fallback
-    // This ensures old submissions (which only had the JSON blob) still display correctly
+    // Normalise each row — handle old rows where data is in a raw JSON blob column
     const normalized = rows.map(row => {
-      // Try to parse Raw Fields JSON if present
+      // Try to parse any raw JSON blob present (old submissions)
       let parsed = {};
-      const rawJson = row['Raw Fields JSON'] || row['raw fields json'] || '';
-      if(rawJson && rawJson.startsWith('{')){
+      const rawJson = row['Raw Fields JSON'] || '';
+      if(rawJson && rawJson.toString().startsWith('{')){
         try { parsed = JSON.parse(rawJson); } catch(e){}
       }
-      // Also handle old format where data was stored as a JSON string in the last column
-      // e.g. '{"Type1":"FSR","CSU":"0",...}'
+      // 'Type1' in form → 'Type' in sheet; 'Module Classification' → 'Module'
+      if(parsed['Type1']  && !parsed['Type'])   parsed['Type']   = parsed['Type1'];
+      if(parsed['Module Classification'] && !parsed['Module']) parsed['Module'] = parsed['Module Classification'];
+      if(parsed['Submitted At'] && !row['Timestamp']) row['Timestamp'] = parsed['Submitted At'];
+
       const merged = {};
       DISPLAY_COLS.forEach(col => {
         const direct = row[col];
-        // Map parsed JSON keys to display columns
-        const fromJson = parsed[col] || parsed[col.replace(' (field)','')] || '';
-        merged[col] = (direct && direct !== '—' && direct !== '') ? direct : (fromJson || '—');
+        const fromJson = parsed[col] || '';
+        const val = (direct !== undefined && direct !== null && direct !== '' && direct !== '—')
+          ? direct : fromJson;
+        merged[col] = val;
       });
       return merged;
     });
 
     const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const isEmpty = v => !v || v==='—' || v==='';
+    const isEmpty = v => v === undefined || v === null || v === '' || v === '—';
 
     document.getElementById('responsesTable').innerHTML=`<table>
       <thead><tr>${DISPLAY_COLS.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
       <tbody>${normalized.map(row=>`<tr>${DISPLAY_COLS.map(col=>{
-        const v = row[col];
-        const empty = isEmpty(v);
+        const v=row[col]; const empty=isEmpty(v);
         return `<td style="${empty?'color:var(--text-ghost)':''}">${esc(empty?'—':v)}</td>`;
       }).join('')}</tr>`).join('')}</tbody>
     </table>`;
