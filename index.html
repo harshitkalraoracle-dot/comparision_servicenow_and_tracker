@@ -13,6 +13,7 @@
 --border:#252538; --border2:#2e2e48;
 --accent:#6366f1; --accent2:#818cf8;
 --success:#34d399; --danger:#f87171; --warning:#fbbf24; --purple:#c084fc;
+--resolved:#f97316; --closed:#60a5fa;
 --text:#e2e2f0; --text-dim:#7070a0; --text-ghost:#404060;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -98,6 +99,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .pill-yellow{background:rgba(251,191,36,.1);color:var(--warning);border:1px solid rgba(251,191,36,.2);}
 .pill-blue{background:rgba(96,165,250,.1);color:#60a5fa;border:1px solid rgba(96,165,250,.2);}
 .pill-purple{background:rgba(192,132,252,.1);color:var(--purple);border:1px solid rgba(192,132,252,.2);}
+.pill-resolved{background:rgba(249,115,22,.12);color:var(--resolved);border:1px solid rgba(249,115,22,.25);}
+.pill-closed{background:rgba(96,165,250,.12);color:var(--closed);border:1px solid rgba(96,165,250,.25);}
 .sec-chev{color:var(--text-dim);transition:transform .2s;font-size:.75rem;}
 .sec-body{display:none;padding:20px 22px;}
 .sec-body.open{display:block;}
@@ -154,6 +157,10 @@ tr:hover td{background:rgba(255,255,255,.015);}
 .step-content p{font-size:.78rem;color:var(--text-dim);line-height:1.6;}
 .step-content code{font-family:'DM Mono',monospace;font-size:.72rem;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:2px 7px;color:var(--accent2);}
 .url-display{font-family:'DM Mono',monospace;font-size:.7rem;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:10px 14px;color:var(--success);margin-top:8px;word-break:break-all;}
+/* Status badges */
+.status-resolved{color:var(--resolved);font-weight:600;}
+.status-closed{color:var(--closed);font-weight:600;}
+.status-open{color:var(--success);}
 </style>
 </head>
 <body>
@@ -216,7 +223,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
     <div class="controls-bar">
       <div class="toggle-row" onclick="toggleOpt()">
         <div class="toggle-track" id="togTrack"><div class="toggle-thumb"></div></div>
-        <span class="toggle-label">Include optional columns: <em>Module, Close Date, Detail Description &amp; Solution, SAAS Support SR, Current Owner</em></span>
+        <span class="toggle-label">Include optional columns: <em>Module Classification, Close Date, Detail Description and Solution, SAAS Support SR (if any), Current Owner</em></span>
       </div>
       <button class="btn btn-primary" id="analyzeBtn" onclick="runAnalysis()" disabled>🔍 Analyze</button>
     </div>
@@ -227,8 +234,9 @@ tr:hover td{background:rgba(255,255,255,.015);}
         <div class="stat"><div class="stat-n" id="sn3" style="color:var(--warning)">0</div><div class="stat-l">Priority Mismatches</div></div>
         <div class="stat"><div class="stat-n" id="sn4" style="color:#60a5fa">0</div><div class="stat-l">Incomplete Entries</div></div>
         <div class="stat"><div class="stat-n" id="sn5" style="color:var(--purple)">0</div><div class="stat-l">Duplicates</div></div>
-        <div class="stat"><div class="stat-n" id="sn6" style="color:#f97316">0</div><div class="stat-l">Closure Status Gap</div></div>
-        <div class="stat"><div class="stat-n" id="sn7" style="color:#e879f9">0</div><div class="stat-l">Owner Mismatches</div></div>
+        <div class="stat"><div class="stat-n" id="sn6" style="color:var(--resolved)">0</div><div class="stat-l">Resolved — Status Gap</div></div>
+        <div class="stat"><div class="stat-n" id="sn7" style="color:var(--closed)">0</div><div class="stat-l">Closed — Status Gap</div></div>
+        <div class="stat"><div class="stat-n" id="sn8" style="color:#e879f9">0</div><div class="stat-l">Owner Mismatches</div></div>
       </div>
       <div class="formgen-panel" id="formgenPanel" style="display:none;">
         <h2>📤 Send Data Collection Forms</h2>
@@ -246,7 +254,8 @@ tr:hover td{background:rgba(255,255,255,.015);}
       <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-blue"></div>Missing Fields Summary by Team Member<span class="pill pill-blue" id="c4">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body open"><div id="t4"></div></div></div>
       <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-blue"></div>Incomplete Entries — Detailed<span class="pill pill-blue" id="c5">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t5"></div></div></div>
       <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot dot-purple"></div>Duplicate Entries<span class="pill pill-purple" id="c6">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t6"></div></div></div>
-      <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot" style="background:#f97316;box-shadow:0 0 8px #f97316;"></div>Closed/Resolved in ServiceNow — Status Gap in Tracker<span class="pill" style="background:rgba(249,115,22,.12);color:#f97316;border:1px solid rgba(249,115,22,.25);" id="c7">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t7"></div></div></div>
+      <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot" style="background:var(--resolved);box-shadow:0 0 8px var(--resolved);"></div>Resolved in ServiceNow — Status Gap in Tracker<span class="pill pill-resolved" id="c7">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t7"></div></div></div>
+      <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot" style="background:var(--closed);box-shadow:0 0 8px var(--closed);"></div>Closed in ServiceNow — Status Gap in Tracker<span class="pill pill-closed" id="c7b">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t7b"></div></div></div>
       <div class="section"><div class="sec-head" onclick="toggleSec(this)"><div class="sec-title"><div class="dot" style="background:#e879f9;box-shadow:0 0 8px #e879f9;"></div>Owner Mismatches — SN Assigned To vs Tracker Worked By<span class="pill" style="background:rgba(232,121,249,.12);color:#e879f9;border:1px solid rgba(232,121,249,.25);" id="c8">0</span></div><div class="sec-chev">▼</div></div><div class="sec-body"><div id="t8"></div></div></div>
     </div>
   </div>
@@ -321,58 +330,83 @@ tr:hover td{background:rgba(255,255,255,.015);}
 <script>
 const GITHUB_PAGES_BASE = "https://harshitkalraoracle-dot.github.io/comparision_servicenow_and_tracker";
 
-// ── Column names as they actually appear in your Excel files ──────────────────
-// Tracker columns (source of truth for field names used everywhere):
-//   Incident#, Module Classification, SR Open Date, Assignment Date, Close Date,
-//   Incident Category, Type, CSU, Priority, Severity, Description,
-//   Requested By, Worked By, Status, Current Owner,
+// ═══════════════════════════════════════════════════════════════
+//  COLUMN DEFINITIONS — matched exactly to your Excel headers
+// ═══════════════════════════════════════════════════════════════
+//
+// TRACKER columns (exact header names in your .xlsx):
+//   S.No, Incident#, Module Classification, SR Open Date, Assignment Date,
+//   Close Date, Incident Category, Type1, CSU, Priority, Severity,
+//   Description, Requested By, Worked By, Status, Current Owner,
 //   Detail Description and Solution, Comments, SAAS Support SR (if any)
 //
-// ServiceNow columns → how we read them:
-//   Number (= Incident#), Priority, Short description (= Description),
-//   Incident state (= Status), Assigned to (= Worked By), Caller (= Requested By),
-//   Opened (= SR Open Date)
+// SERVICENOW columns (exact header names in your .xlsx):
+//   Number, Opened, Caller, Location, Short description, Classification,
+//   Incident state, Priority, Assignment group, Assigned to
 
-// Helper: get the Incident# from a ServiceNow row (column = 'Number')
-// or from a Tracker row (column = 'Incident#')
+// ── Helpers to read Incident# from each sheet ──────────────────
 function getSRNum(r, isSN) {
   return isSN ? (r['Number']||'').toString().trim()
               : (r['Incident#']||'').toString().trim();
 }
 
-// Required columns checked against Tracker rows
+// ── Required Tracker columns (always checked) ──────────────────
+// These match your actual Tracker column headers EXACTLY
 const REQUIRED = [
-  'Incident Category','Type','CSU','Priority','Severity',
-  'Description','Requested By','Worked By','Status','Comments','Assignment Date'
+  'Incident Category',
+  'Type1',
+  'CSU',
+  'Priority',
+  'Severity',
+  'Description',
+  'Requested By',
+  'Worked By',
+  'Status',
+  'Comments',
+  'Assignment Date'
 ];
-// Optional columns — shown only when the toggle is ON
+
+// ── Optional Tracker columns (shown only when toggle is ON) ────
 const OPTIONAL = [
-  'Module','SR Open Date','Close Date',
-  'Current Owner','Detail Description and Solution','SAAS Support SR (if any)'
+  'Module Classification',
+  'SR Open Date',
+  'Close Date',
+  'Current Owner',
+  'Detail Description and Solution',
+  'SAAS Support SR (if any)'
 ];
+
+// Closure fields — injected into form when incident is Resolved/Closed in SN
+const CLOSURE_FIELDS = ['Close Date', 'Detail Description and Solution', 'SAAS Support SR (if any)'];
+
+// SN status values
+const SN_RESOLVED_VALUES = ['Resolved'];
+const SN_CLOSED_VALUES   = ['Closed'];
+const SN_TERMINAL        = [...SN_RESOLVED_VALUES, ...SN_CLOSED_VALUES];
+
+// Tracker status values that count as "closed"
+const TR_CLOSED = ['Resolved', 'Closed'];
 
 const AVATAR_COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ef4444','#06b6d4'];
 const URL_MAX = 8000;
-let snData=null,trData=null,checkOpt=false,allIncomplete={},formIncomplete={};
+let snData=null, trData=null, checkOpt=false, allIncomplete={}, formIncomplete={};
 window._snFile=null; window._trFile=null;
 
 function saveConfig(){const u=document.getElementById('appsScriptUrl').value.trim();if(u)localStorage.setItem('appsScriptUrl',u);}
 function loadConfig(){const s=localStorage.getItem('appsScriptUrl');if(s)document.getElementById('appsScriptUrl').value=s;}
 function getAppsScriptUrl(){return document.getElementById('appsScriptUrl').value.trim();}
 
-// FIXED navigation — safely checks element exists before using it
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const page=document.getElementById('page-'+id);
   const nav=document.getElementById('nav-'+id);
-  if(page) page.classList.add('active');
-  if(nav)  nav.classList.add('active');
+  if(page)page.classList.add('active');
+  if(nav)nav.classList.add('active');
   const titles={analyze:'Analyze Sheets',responses:'Responses',setup:'Setup Guide'};
   document.getElementById('pageTitle').textContent=titles[id]||id;
 }
 
-// Drag & drop
 function onDragOver(e,id){e.preventDefault();const z=document.getElementById(id);z.style.borderColor='var(--accent)';z.style.background='rgba(99,102,241,.07)';}
 function onDragLeave(id){const z=document.getElementById(id);z.style.borderColor='';z.style.background='';}
 function onDrop(e,type,zoneId){
@@ -382,12 +416,7 @@ function onDrop(e,type,zoneId){
   try{const dt=new DataTransfer();dt.items.add(file);inp.files=dt.files;}catch(err){}
   processFile(type,file);
 }
-
-// FIXED file handling — uses label+hidden input so clicking anywhere on zone works
-function handleFile(type,input){
-  const file=input.files[0];if(!file)return;
-  processFile(type,file);
-}
+function handleFile(type,input){const file=input.files[0];if(!file)return;processFile(type,file);}
 function processFile(type,file){
   if(!file.name.match(/\.xlsx$/i)){toast('⚠️ Only .xlsx files accepted');return;}
   if(type==='sn') window._snFile=file;
@@ -422,18 +451,19 @@ async function runAnalysis(){
 }
 
 function analyze(){
-  // Build lookup maps keyed by Incident# (INCxxxxxxx)
+  // ── Build lookup maps keyed by Incident# ──────────────────────
   const trMap=new Map(), snMap=new Map();
   trData.forEach(r=>{const s=getSRNum(r,false);if(s)trMap.set(s,r);});
   snData.forEach(r=>{const s=getSRNum(r,true); if(s)snMap.set(s,r);});
 
-  // 1. In SN but not in Tracker
+  // ── 1. In SN but not in Tracker ───────────────────────────────
   const missing=snData.filter(r=>{const s=getSRNum(r,true);return s&&!trMap.has(s);});
 
-  // 2. In Tracker but not in SN
+  // ── 2. In Tracker but not in SN ───────────────────────────────
   const trackerOnly=trData.filter(r=>{const s=getSRNum(r,false);return s&&!snMap.has(s);});
 
-  // 3. Priority mismatches — SN 'Priority' vs Tracker 'Priority' (same column name, both match)
+  // ── 3. Priority mismatches ─────────────────────────────────────
+  // SN 'Priority' vs Tracker 'Priority' — same column name in both
   const mismatches=[];
   snData.forEach(r=>{
     const s=getSRNum(r,true);
@@ -447,17 +477,20 @@ function analyze(){
     }
   });
 
-  // 4. Incomplete Tracker entries — check against Tracker column names
-  const cols=checkOpt?[...REQUIRED,...OPTIONAL]:[...REQUIRED];
-  const raw={};
+  // ── 4. Incomplete Tracker entries ─────────────────────────────
+  // Check against the actual Tracker column names
+  const cols = checkOpt ? [...REQUIRED, ...OPTIONAL] : [...REQUIRED];
+  const raw  = {};
   trData.forEach(r=>{
     const person=(r['Worked By']||'').trim()||'Unassigned';
     const sr=getSRNum(r,false)||'N/A';
-    if(sr==='N/A')return; // skip blank rows
+    if(sr==='N/A') return;   // skip blank rows
+
     const empty=cols.filter(f=>!(r[f]||'').toString().trim());
-    if(!empty.length)return;
+    if(!empty.length) return;
+
     const status=(r['Status']||'').trim();
-    if(!raw[person])raw[person]={};
+    if(!raw[person]) raw[person]={};
     if(!raw[person][sr])
       raw[person][sr]={fields:empty, description:(r['Description']||'N/A'), rowCount:1, status};
     else{
@@ -476,7 +509,7 @@ function analyze(){
     }));
   });
 
-  // 5. Duplicates — same Incident# appearing on multiple Tracker rows
+  // ── 5. Duplicates ─────────────────────────────────────────────
   const srOcc={};
   trData.forEach((r,i)=>{
     const s=getSRNum(r,false);
@@ -485,52 +518,54 @@ function analyze(){
   const dups={};
   Object.keys(srOcc).forEach(s=>{if(srOcc[s].length>1)dups[s]=srOcc[s];});
 
-  // 6. Closed/Resolved in SN but Tracker status doesn't reflect closure
-  // Covers both: (a) incident exists in tracker with wrong status,
-  //              (b) incident not in tracker at all (already in 'missing' but surfaced here too for context)
-  const SN_CLOSED = ['Closed','Resolved'];
-  const TR_CLOSED = ['Resolved','Closed'];
-  const closureGap = [];
+  // ── 6 & 7. Closure Status Gap — separate Resolved vs Closed ───
+  // SN uses 'Incident state' column; Tracker uses 'Status'
+  const closureGapResolved = [];
+  const closureGapClosed   = [];
+
   snData.forEach(r=>{
-    const s    = getSRNum(r,true);
-    const snSt = (r['Incident state']||'').trim();
-    if(!s || !SN_CLOSED.includes(snSt)) return;
+    const s      = getSRNum(r,true);
+    // NOTE: SN uses 'Incident state' (not 'Incident State')
+    const snSt   = (r['Incident state']||'').toString().trim();
+    if(!s || !SN_TERMINAL.includes(snSt)) return;
+
+    const isResolved = SN_RESOLVED_VALUES.includes(snSt);
+    const isClosed   = SN_CLOSED_VALUES.includes(snSt);
+    const targetArr  = isResolved ? closureGapResolved : closureGapClosed;
+
     if(trMap.has(s)){
       const tr   = trMap.get(s);
       const trSt = (tr['Status']||'').trim();
       if(!TR_CLOSED.includes(trSt)){
-        closureGap.push({
-          inc:    s,
-          snState: snSt,
-          trStatus: trSt||'—',
-          desc:   (tr['Description']||r['Short description']||'').slice(0,80),
-          by:     tr['Worked By']||r['Assigned to']||'—',
+        targetArr.push({
+          inc:       s,
+          snState:   snSt,
+          trStatus:  trSt||'—',
+          desc:      (tr['Description']||r['Short description']||'').slice(0,80),
+          by:        (tr['Worked By']||r['Assigned to']||'—'),
           closeDate: (tr['Close Date']||'').toString().trim()
         });
       }
     } else {
-      // In SN (closed) but not in tracker at all
-      closureGap.push({
-        inc:      s,
-        snState:  snSt,
-        trStatus: 'NOT IN TRACKER',
-        desc:     (r['Short description']||'').slice(0,80),
-        by:       (r['Assigned to']||'—'),
+      // Closed/Resolved in SN but completely absent from Tracker
+      targetArr.push({
+        inc:       s,
+        snState:   snSt,
+        trStatus:  'NOT IN TRACKER',
+        desc:      (r['Short description']||'').slice(0,80),
+        by:        (r['Assigned to']||'—'),
         closeDate: ''
       });
     }
   });
 
-  // ── Owner mismatches: SN "Assigned to" vs Tracker "Worked By" ───────────────
-  // Flag both genuine reassignments AND name typos/variants (same person, different spelling)
+  // ── 8. Owner mismatches ─────────────────────────────────────
+  // SN: 'Assigned to'  vs  Tracker: 'Worked By'
   function fuzzyMatch(a,b){
-    // Normalise: lowercase, collapse spaces, strip punctuation
     const n=s=>s.toLowerCase().replace(/[^a-z\s]/g,'').replace(/\s+/g,' ').trim();
     const na=n(a),nb=n(b);
     if(na===nb) return true;
-    // One name is a substring of the other (handles middle-name omissions)
     if(na.includes(nb)||nb.includes(na)) return true;
-    // Check if first+last tokens overlap enough (handles transpositions / extra middle name)
     const ta=na.split(' '),tb=nb.split(' ');
     const shared=ta.filter(w=>w.length>2&&tb.includes(w));
     return shared.length>=2;
@@ -540,72 +575,70 @@ function analyze(){
     const s=getSRNum(r,true);
     if(!s||!trMap.has(s)) return;
     const tr=trMap.get(s);
+    // SN column is 'Assigned to' (lowercase t)
     const snOwner=(r['Assigned to']||'').trim();
     const trOwner=(tr['Worked By']||'').trim();
-    if(!snOwner||!trOwner||snOwner==='None'||trOwner==='None') return;
+    if(!snOwner||!trOwner||snOwner.toLowerCase()==='none'||trOwner.toLowerCase()==='none') return;
     if(snOwner.toLowerCase()===trOwner.toLowerCase()) return;
     const isTypo=fuzzyMatch(snOwner,trOwner);
     ownerMismatches.push({
-      inc:     s,
-      snOwner, trOwner, isTypo,
-      priority:(r['Priority']||'').trim(),
-      snState: (r['Incident state']||'').trim(),
-      trStatus:(tr['Status']||'').trim(),
-      desc:    (tr['Description']||r['Short description']||'').slice(0,70)
+      inc:      s,
+      snOwner,  trOwner, isTypo,
+      priority: (r['Priority']||'').trim(),
+      snState:  (r['Incident state']||'').trim(),
+      trStatus: (tr['Status']||'').trim(),
+      desc:     (tr['Description']||r['Short description']||'').slice(0,70)
     });
   });
 
+  // ── Update stat cards ──────────────────────────────────────────
   document.getElementById('sn1').textContent=missing.length;
   document.getElementById('sn2').textContent=trackerOnly.length;
   document.getElementById('sn3').textContent=mismatches.length;
   document.getElementById('sn4').textContent=Object.values(allIncomplete).reduce((s,a)=>s+a.length,0);
   document.getElementById('sn5').textContent=Object.keys(dups).length;
-  document.getElementById('sn6').textContent=closureGap.length;
-  document.getElementById('sn7').textContent=ownerMismatches.length;
-  renderMissing(missing);renderTrackerOnly(trackerOnly);renderMismatches(mismatches);
-  renderSummary(allIncomplete,trData);renderDetailed(allIncomplete);renderDups(dups);
-  renderClosureGap(closureGap);renderOwnerMismatches(ownerMismatches);
+  document.getElementById('sn6').textContent=closureGapResolved.length;
+  document.getElementById('sn7').textContent=closureGapClosed.length;
+  document.getElementById('sn8').textContent=ownerMismatches.length;
 
-  // ── Merge closure fields into allIncomplete for form generation ──────────────
-  // For every incident in closureGap that is in the tracker (by a real person),
-  // ensure Close Date and Detail Description and Solution appear in their form
-  // entry — but only if those fields are not already filled in the tracker row.
-  const CLOSURE_FIELDS = ['Close Date','Detail Description and Solution'];
+  renderMissing(missing);
+  renderTrackerOnly(trackerOnly);
+  renderMismatches(mismatches);
+  renderSummary(allIncomplete,trData);
+  renderDetailed(allIncomplete);
+  renderDups(dups);
+  renderClosureGap(closureGapResolved, 't7', 'c7', 'Resolved', 'var(--resolved)');
+  renderClosureGap(closureGapClosed,   't7b','c7b','Closed',   'var(--closed)');
+  renderOwnerMismatches(ownerMismatches);
 
-  // Build a deep copy so we don't mutate allIncomplete display data
+  // ── Merge closure fields into formIncomplete ───────────────────
   formIncomplete = JSON.parse(JSON.stringify(allIncomplete));
-
-  closureGap.forEach(gap=>{
-    if(gap.trStatus === 'NOT IN TRACKER') return; // can't assign a form for a non-existent row
-    const person = gap.by;
-    if(!person || person==='—') return;
-
-    // Which closure fields are actually missing for this incident in the tracker?
-    const trRow = trMap.get(gap.inc);
-    const missingClosureFields = CLOSURE_FIELDS.filter(f=>{
-      const val = trRow ? (trRow[f]||'').toString().trim() : '';
-      return !val || val==='None';
+  const allClosureGaps = [...closureGapResolved, ...closureGapClosed];
+  allClosureGaps.forEach(gap=>{
+    if(gap.trStatus==='NOT IN TRACKER') return;
+    const person=gap.by;
+    if(!person||person==='—') return;
+    const trRow=trMap.get(gap.inc);
+    const missingClosureFields=CLOSURE_FIELDS.filter(f=>{
+      const val=trRow?(trRow[f]||'').toString().trim():'';
+      return !val||val.toLowerCase()==='none';
     });
     if(!missingClosureFields.length) return;
-
     if(!formIncomplete[person]) formIncomplete[person]=[];
-
-    // Find if this incident already has an entry for this person
-    const existing = formIncomplete[person].find(e=>e.sr===gap.inc);
+    const existing=formIncomplete[person].find(e=>e.sr===gap.inc);
     if(existing){
-      // Add any missing closure fields not already listed
-      missingClosureFields.forEach(f=>{
-        if(!existing.fields.includes(f)) existing.fields.push(f);
-      });
-      existing.isClosureEntry = true;
+      missingClosureFields.forEach(f=>{if(!existing.fields.includes(f))existing.fields.push(f);});
+      existing.isClosureEntry=true;
+      existing.snState=gap.snState;
     } else {
-      // Brand new entry — only the closure fields are needed
       formIncomplete[person].push({
         sr:             gap.inc,
         description:    gap.desc,
         fields:         [...missingClosureFields],
         rowCount:       1,
-        isClosureEntry: true   // flag so form can show context
+        isClosureEntry: true,
+        snState:        gap.snState,
+        status:         gap.trStatus
       });
     }
   });
@@ -613,23 +646,34 @@ function analyze(){
   buildFormGen(formIncomplete);
 }
 
+// ── Rendering helpers ──────────────────────────────────────────
 function pc(p){const s=(p||'').toString().toLowerCase();if(s.includes('p1')||s.includes('critical'))return 'p-high';if(s.includes('p2')||s.includes('high'))return 'p-high';if(s.includes('p3')||s.includes('medium'))return 'p-med';if(s.includes('p4')||s.includes('low'))return 'p-low';return '';}
 function emptyMsg(m){return `<div class="empty"><div class="ck">✓</div>${m}</div>`;}
 function toggleSec(h){const b=h.nextElementSibling,c=h.querySelector('.sec-chev');b.classList.toggle('open');c.style.transform=b.classList.contains('open')?'rotate(180deg)':'';}
+
+function statusBadge(st){
+  if(!st||st==='—') return `<span style="color:var(--text-ghost)">—</span>`;
+  const sl=st.toLowerCase();
+  if(sl==='resolved') return `<span class="status-resolved">Resolved</span>`;
+  if(sl==='closed')   return `<span class="status-closed">Closed</span>`;
+  return `<span class="status-open">${st}</span>`;
+}
 
 function renderMissing(data){
   document.getElementById('c1').textContent=data.length;
   const c=document.getElementById('t1');
   if(!data.length){c.innerHTML=emptyMsg('All ServiceNow incidents are tracked');return;}
-  c.innerHTML=`<table><thead><tr><th>Incident#</th><th>Priority</th><th>Description</th><th>Open Date</th><th>State</th></tr></thead><tbody>
+  c.innerHTML=`<table><thead><tr><th>Incident#</th><th>Priority</th><th>Short Description</th><th>Opened</th><th>Incident State</th><th>Assigned To</th></tr></thead><tbody>
   ${data.map(r=>`<tr>
     <td><strong>${r['Number']||'N/A'}</strong></td>
     <td class="${pc(r['Priority'])}">${r['Priority']||'N/A'}</td>
     <td>${r['Short description']||'N/A'}</td>
     <td>${r['Opened']||'N/A'}</td>
-    <td>${r['Incident state']||'N/A'}</td>
+    <td>${statusBadge(r['Incident state'])}</td>
+    <td>${r['Assigned to']||'N/A'}</td>
   </tr>`).join('')}</tbody></table>`;
 }
+
 function renderTrackerOnly(data){
   document.getElementById('c2').textContent=data.length;
   const c=document.getElementById('t2');
@@ -640,14 +684,15 @@ function renderTrackerOnly(data){
     <td>${r['Description']||'N/A'}</td>
     <td>${r['Worked By']||'N/A'}</td>
     <td class="${pc(r['Priority'])}">${r['Priority']||'N/A'}</td>
-    <td>${r['Status']||'N/A'}</td>
+    <td>${statusBadge(r['Status'])}</td>
   </tr>`).join('')}</tbody></table>`;
 }
+
 function renderMismatches(data){
   document.getElementById('c3').textContent=data.length;
   const c=document.getElementById('t3');
   if(!data.length){c.innerHTML=emptyMsg('All priorities match');return;}
-  c.innerHTML=`<table><thead><tr><th>Incident#</th><th>ServiceNow Priority</th><th>Tracker Priority</th><th>Worked By</th><th>Description</th></tr></thead><tbody>
+  c.innerHTML=`<table><thead><tr><th>Incident#</th><th>SN Priority</th><th>Tracker Priority</th><th>Worked By</th><th>Description</th></tr></thead><tbody>
   ${data.map(m=>`<tr>
     <td><strong>${m.sr}</strong></td>
     <td class="${pc(m.snP)}">${m.snP}</td>
@@ -656,64 +701,124 @@ function renderMismatches(data){
     <td>${m.desc}</td>
   </tr>`).join('')}</tbody></table>`;
 }
+
 function renderSummary(incomplete,allTr){
-  // Count total incidents per person from Tracker (only count rows that have an Incident#)
   const totals={};
   allTr.forEach(r=>{
     const p=(r['Worked By']||'').trim();
     const inc=getSRNum(r,false);
-    if(p && p.toLowerCase()!=='unassigned' && inc) totals[p]=(totals[p]||0)+1;
+    if(p&&p.toLowerCase()!=='unassigned'&&inc) totals[p]=(totals[p]||0)+1;
   });
   const sum={};
-  Object.keys(incomplete).forEach(p=>{if(!p||p.toLowerCase()==='unassigned')return;const entries=incomplete[p];const freq={};entries.forEach(e=>e.fields.forEach(f=>{freq[f]=(freq[f]||0)+1;}));const top=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([f,c])=>`${f} (${c})`).join(', ');const totalM=entries.reduce((s,e)=>s+e.fields.length,0);sum[p]={total:totals[p]||entries.length,with:entries.length,totalM,avg:(totalM/entries.length).toFixed(1),top};});
+  Object.keys(incomplete).forEach(p=>{
+    if(!p||p.toLowerCase()==='unassigned') return;
+    const entries=incomplete[p];
+    const freq={};
+    entries.forEach(e=>e.fields.forEach(f=>{freq[f]=(freq[f]||0)+1;}));
+    const top=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([f,c])=>`${f} (${c})`).join(', ');
+    const totalM=entries.reduce((s,e)=>s+e.fields.length,0);
+    sum[p]={total:totals[p]||entries.length,with:entries.length,totalM,avg:(totalM/entries.length).toFixed(1),top};
+  });
   const grand=Object.values(sum).reduce((s,v)=>s+v.with,0);
   document.getElementById('c4').textContent=grand;
   document.getElementById('c5').textContent=Object.values(incomplete).reduce((s,a)=>s+a.length,0);
   const c=document.getElementById('t4');
   if(!grand){c.innerHTML=emptyMsg('No missing fields found');return;}
-  c.innerHTML=`<table><thead><tr><th>Team Member</th><th>Total</th><th>Incomplete</th><th>Missing Fields</th><th>Avg/Incident</th><th>Most Missing</th></tr></thead><tbody>${Object.keys(sum).sort((a,b)=>sum[b].with-sum[a].with).map(p=>{const s=sum[p];const pct=((s.with/s.total)*100).toFixed(0);return `<tr><td><strong>${p}</strong></td><td>${s.total}</td><td>${s.with}<span style="color:var(--text-dim);font-size:.75em;"> (${pct}%)</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></td><td><span style="color:var(--danger);font-weight:600;">${s.totalM}</span></td><td>${s.avg}</td><td style="color:var(--text-dim);font-size:.72em;">${s.top||'N/A'}</td></tr>`;}).join('')}</tbody></table>`;
+  c.innerHTML=`<table><thead><tr><th>Team Member</th><th>Total</th><th>Incomplete</th><th>Missing Fields</th><th>Avg/Incident</th><th>Most Missing</th></tr></thead><tbody>
+  ${Object.keys(sum).sort((a,b)=>sum[b].with-sum[a].with).map(p=>{
+    const s=sum[p];const pct=((s.with/s.total)*100).toFixed(0);
+    return `<tr><td><strong>${p}</strong></td><td>${s.total}</td>
+      <td>${s.with}<span style="color:var(--text-dim);font-size:.75em;"> (${pct}%)</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div></td>
+      <td><span style="color:var(--danger);font-weight:600;">${s.totalM}</span></td>
+      <td>${s.avg}</td>
+      <td style="color:var(--text-dim);font-size:.72em;">${s.top||'N/A'}</td></tr>`;
+  }).join('')}</tbody></table>`;
 }
 
 function renderDetailed(incomplete){
-  const c=document.getElementById('t5');const all=Object.values(incomplete).reduce((s,a)=>s+a.length,0);
+  const c=document.getElementById('t5');
+  const all=Object.values(incomplete).reduce((s,a)=>s+a.length,0);
   if(!all){c.innerHTML=emptyMsg('All entries are complete');return;}
-  c.innerHTML=Object.keys(incomplete).sort().map(person=>{const entries=incomplete[person];const totalRows=entries.reduce((s,e)=>s+(e.rowCount||1),0);const dupCount=entries.filter(e=>(e.rowCount||1)>1).length;return `<div class="person-block"><div class="person-head"><div class="person-head-name">${person}</div><div style="display:flex;gap:8px;align-items:center;">${dupCount>0?`<span class="pill pill-purple">⚠ ${dupCount} multi-row SR${dupCount>1?'s':''}</span>`:''}<span class="pill pill-blue">${entries.length} unique SR${entries.length>1?'s':''} · ${totalRows} total rows</span></div></div><div style="padding:12px 16px;"><table><thead><tr><th>SR#</th><th>Rows</th><th>Missing Fields</th><th>Description</th></tr></thead><tbody>${entries.map(e=>`<tr><td><strong>${e.sr}</strong></td><td style="text-align:center;">${(e.rowCount||1)>1?`<span style="color:var(--purple);font-weight:600;">${e.rowCount}</span><span style="color:var(--text-dim);font-size:.7em;"> rows</span>`:`<span style="color:var(--text-dim);">1</span>`}</td><td>${e.fields.map(f=>`<span class="tag">${f}</span>`).join('')}</td><td style="color:var(--text-dim);font-size:.75em;">${e.description}</td></tr>`).join('')}</tbody></table>${dupCount>0?`<div style="margin-top:10px;font-size:.72rem;color:var(--purple);background:rgba(192,132,252,.06);border:1px solid rgba(192,132,252,.15);border-radius:6px;padding:8px 12px;">ℹ️ Data applied to all rows of each multi-row SR# on submit.</div>`:''}</div></div>`;}).join('');
+  c.innerHTML=Object.keys(incomplete).sort().map(person=>{
+    const entries=incomplete[person];
+    const totalRows=entries.reduce((s,e)=>s+(e.rowCount||1),0);
+    const dupCount=entries.filter(e=>(e.rowCount||1)>1).length;
+    return `<div class="person-block">
+      <div class="person-head">
+        <div class="person-head-name">${person}</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          ${dupCount>0?`<span class="pill pill-purple">⚠ ${dupCount} multi-row SR${dupCount>1?'s':''}</span>`:''}
+          <span class="pill pill-blue">${entries.length} unique SR${entries.length>1?'s':''} · ${totalRows} total rows</span>
+        </div>
+      </div>
+      <div style="padding:12px 16px;">
+        <table><thead><tr><th>SR#</th><th>Rows</th><th>Status</th><th>Missing Fields</th><th>Description</th></tr></thead><tbody>
+        ${entries.map(e=>`<tr>
+          <td><strong>${e.sr}</strong></td>
+          <td style="text-align:center;">${(e.rowCount||1)>1
+            ?`<span style="color:var(--purple);font-weight:600;">${e.rowCount}</span><span style="color:var(--text-dim);font-size:.7em;"> rows</span>`
+            :`<span style="color:var(--text-dim);">1</span>`}</td>
+          <td>${statusBadge(e.status)}</td>
+          <td>${e.fields.map(f=>`<span class="tag">${f}</span>`).join('')}</td>
+          <td style="color:var(--text-dim);font-size:.75em;">${e.description}</td>
+        </tr>`).join('')}
+        </tbody></table>
+        ${dupCount>0?`<div style="margin-top:10px;font-size:.72rem;color:var(--purple);background:rgba(192,132,252,.06);border:1px solid rgba(192,132,252,.15);border-radius:6px;padding:8px 12px;">ℹ️ Data applied to all rows of each multi-row SR# on submit.</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderDups(dups){
   const groups=Object.keys(dups).length,rows=Object.values(dups).reduce((s,a)=>s+a.length,0);
   document.getElementById('c6').textContent=groups>0?`${groups} SR${groups>1?'s':''} (${rows} rows)`:'0';
-  const c=document.getElementById('t6');if(!groups){c.innerHTML=emptyMsg('No duplicates found');return;}
-  c.innerHTML=Object.keys(dups).sort().map(sr=>{const entries=dups[sr];return `<div class="person-block" style="border-color:rgba(192,132,252,.2);"><div class="person-head" style="background:rgba(192,132,252,.06);"><span style="color:var(--purple);font-weight:600;">SR# ${sr}</span><span class="pill pill-purple">${entries.length} duplicates</span></div><div style="padding:12px 16px;"><table><thead><tr><th>Row</th><th>Description</th><th>Worked By</th><th>Priority</th><th>Status</th></tr></thead><tbody>${entries.map(({row,idx})=>`<tr><td><strong>Row ${idx}</strong></td><td>${row['Description']||'N/A'}</td><td>${row['Worked By']||'N/A'}</td><td class="${pc(row['Priority'])}">${row['Priority']||'N/A'}</td><td>${row['Status']||'N/A'}</td></tr>`).join('')}</tbody></table></div></div>`;}).join('');
+  const c=document.getElementById('t6');
+  if(!groups){c.innerHTML=emptyMsg('No duplicates found');return;}
+  c.innerHTML=Object.keys(dups).sort().map(sr=>{
+    const entries=dups[sr];
+    return `<div class="person-block" style="border-color:rgba(192,132,252,.2);">
+      <div class="person-head" style="background:rgba(192,132,252,.06);">
+        <span style="color:var(--purple);font-weight:600;">SR# ${sr}</span>
+        <span class="pill pill-purple">${entries.length} duplicates</span>
+      </div>
+      <div style="padding:12px 16px;">
+        <table><thead><tr><th>Row</th><th>Description</th><th>Worked By</th><th>Priority</th><th>Status</th></tr></thead><tbody>
+        ${entries.map(({row,idx})=>`<tr>
+          <td><strong>Row ${idx}</strong></td>
+          <td>${row['Description']||'N/A'}</td>
+          <td>${row['Worked By']||'N/A'}</td>
+          <td class="${pc(row['Priority'])}">${row['Priority']||'N/A'}</td>
+          <td>${statusBadge(row['Status'])}</td>
+        </tr>`).join('')}
+        </tbody></table>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-function renderClosureGap(data){
-  document.getElementById('c7').textContent = data.length;
-  const c = document.getElementById('t7');
-  if(!data.length){ c.innerHTML = emptyMsg('All closed/resolved SN incidents are correctly reflected in the Tracker'); return; }
+// Renders either the Resolved or Closed gap section
+function renderClosureGap(data, tableId, countId, label, color){
+  document.getElementById(countId).textContent=data.length;
+  const c=document.getElementById(tableId);
+  if(!data.length){c.innerHTML=emptyMsg(`All ${label.toLowerCase()} SN incidents are correctly reflected in the Tracker`);return;}
 
-  // Split into two sub-groups: status mismatch vs not in tracker at all
-  const notInTracker = data.filter(r => r.trStatus === 'NOT IN TRACKER');
-  const wrongStatus  = data.filter(r => r.trStatus !== 'NOT IN TRACKER');
-
-  let html = '';
+  const notInTracker=data.filter(r=>r.trStatus==='NOT IN TRACKER');
+  const wrongStatus =data.filter(r=>r.trStatus!=='NOT IN TRACKER');
+  let html='';
 
   if(wrongStatus.length){
-    html += `<div style="font-size:.72rem;font-weight:600;color:#f97316;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">
-      ⚠ ${wrongStatus.length} incident${wrongStatus.length>1?'s':''} — Closed/Resolved in ServiceNow but Tracker still shows an open status
+    html+=`<div style="font-size:.72rem;font-weight:600;color:${color};letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">
+      ⚠ ${wrongStatus.length} incident${wrongStatus.length>1?'s':''} — ${label} in ServiceNow but Tracker still shows an open status
     </div>
-    <table><thead><tr>
-      <th>Incident#</th><th>SN State</th><th>Tracker Status</th><th>Close Date in Tracker</th><th>Worked By</th><th>Description</th>
-    </tr></thead><tbody>
+    <table><thead><tr><th>Incident#</th><th>SN State</th><th>Tracker Status</th><th>Close Date in Tracker</th><th>Worked By</th><th>Description</th></tr></thead><tbody>
     ${wrongStatus.map(r=>{
-      const noDate = !r.closeDate || r.closeDate==='None';
+      const noDate=!r.closeDate||r.closeDate==='None'||r.closeDate==='';
       return `<tr>
         <td><strong>${r.inc}</strong></td>
-        <td><span style="color:var(--success);font-weight:600;">${r.snState}</span></td>
-        <td><span style="color:#f97316;font-weight:500;">${r.trStatus}</span></td>
-        <td>${noDate
-          ? '<span style="color:var(--danger);font-size:.75em;">Missing</span>'
-          : `<span style="color:var(--success);font-size:.82em;">${r.closeDate}</span>`}</td>
+        <td><span style="color:${color};font-weight:600;">${r.snState}</span></td>
+        <td>${statusBadge(r.trStatus)}</td>
+        <td>${noDate?'<span style="color:var(--danger);font-size:.75em;">Missing</span>':`<span style="color:var(--success);font-size:.82em;">${r.closeDate}</span>`}</td>
         <td>${r.by}</td>
         <td style="color:var(--text-dim);font-size:.75em;">${r.desc}</td>
       </tr>`;
@@ -722,69 +827,59 @@ function renderClosureGap(data){
   }
 
   if(notInTracker.length){
-    if(wrongStatus.length) html += `<div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;"></div>`;
-    html += `<div style="font-size:.72rem;font-weight:600;color:var(--danger);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">
-      ✕ ${notInTracker.length} incident${notInTracker.length>1?'s':''} — Closed/Resolved in ServiceNow but completely absent from Tracker
+    if(wrongStatus.length) html+=`<div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;"></div>`;
+    html+=`<div style="font-size:.72rem;font-weight:600;color:var(--danger);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">
+      ✕ ${notInTracker.length} incident${notInTracker.length>1?'s':''} — ${label} in ServiceNow but completely absent from Tracker
     </div>
-    <table><thead><tr>
-      <th>Incident#</th><th>SN State</th><th>Assigned To (SN)</th><th>Description</th>
-    </tr></thead><tbody>
+    <table><thead><tr><th>Incident#</th><th>SN State</th><th>Assigned To (SN)</th><th>Description</th></tr></thead><tbody>
     ${notInTracker.map(r=>`<tr>
       <td><strong>${r.inc}</strong></td>
-      <td><span style="color:var(--success);font-weight:600;">${r.snState}</span></td>
+      <td><span style="color:${color};font-weight:600;">${r.snState}</span></td>
       <td>${r.by}</td>
       <td style="color:var(--text-dim);font-size:.75em;">${r.desc}</td>
     </tr>`).join('')}
     </tbody></table>`;
   }
-
-  c.innerHTML = html;
+  c.innerHTML=html;
 }
 
 function renderOwnerMismatches(data){
-  document.getElementById('c8').textContent = data.length;
-  const c = document.getElementById('t8');
-  if(!data.length){ c.innerHTML = emptyMsg('All incident owners match between ServiceNow and Tracker'); return; }
+  document.getElementById('c8').textContent=data.length;
+  const c=document.getElementById('t8');
+  if(!data.length){c.innerHTML=emptyMsg('All incident owners match between ServiceNow and Tracker');return;}
 
-  const typos    = data.filter(r=>r.isTypo);
-  const genuine  = data.filter(r=>!r.isTypo);
+  const typos   =data.filter(r=>r.isTypo);
+  const genuine =data.filter(r=>!r.isTypo);
+  const buildTable=rows=>`<table><thead><tr>
+    <th>Incident#</th><th>Priority</th><th>SN State</th>
+    <th>SN — Assigned To</th><th>Tracker — Worked By</th><th>Description</th>
+  </tr></thead><tbody>
+  ${rows.map(r=>`<tr>
+    <td><strong>${r.inc}</strong></td>
+    <td class="${pc(r.priority)}">${r.priority||'—'}</td>
+    <td style="font-size:.8em;">${statusBadge(r.snState)}</td>
+    <td style="color:#e879f9;font-weight:500;">${r.snOwner}</td>
+    <td style="color:#60a5fa;font-weight:500;">${r.trOwner}</td>
+    <td style="color:var(--text-dim);font-size:.75em;">${r.desc}</td>
+  </tr>`).join('')}
+  </tbody></table>`;
 
-  const priorityClass = r => pc(r.priority);
-
-  const buildTable = rows => `
-    <table><thead><tr>
-      <th>Incident#</th><th>Priority</th><th>SN State</th>
-      <th>SN — Assigned To</th><th>Tracker — Worked By</th><th>Description</th>
-    </tr></thead><tbody>
-    ${rows.map(r=>`<tr>
-      <td><strong>${r.inc}</strong></td>
-      <td class="${priorityClass(r)}">${r.priority||'—'}</td>
-      <td style="color:var(--text-dim);font-size:.8em;">${r.snState}</td>
-      <td style="color:#e879f9;font-weight:500;">${r.snOwner}</td>
-      <td style="color:#60a5fa;font-weight:500;">${r.trOwner}</td>
-      <td style="color:var(--text-dim);font-size:.75em;">${r.desc}</td>
-    </tr>`).join('')}
-    </tbody></table>`;
-
-  let html = '';
-
+  let html='';
   if(genuine.length){
-    html += `<div style="font-size:.72rem;font-weight:600;color:#e879f9;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">
-      ⚠ ${genuine.length} incident${genuine.length>1?'s':''} — Different people assigned in SN vs Tracker (possible reassignment not reflected)
+    html+=`<div style="font-size:.72rem;font-weight:600;color:#e879f9;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">
+      ⚠ ${genuine.length} incident${genuine.length>1?'s':''} — Different people assigned in SN vs Tracker
     </div>${buildTable(genuine)}`;
   }
-
   if(typos.length){
-    if(genuine.length) html += `<div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;"></div>`;
-    html += `<div style="font-size:.72rem;font-weight:600;color:var(--text-dim);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">
-      ✎ ${typos.length} incident${typos.length>1?'s':''} — Likely same person, name spelled differently (typo / abbreviation)
+    if(genuine.length) html+=`<div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;"></div>`;
+    html+=`<div style="font-size:.72rem;font-weight:600;color:var(--text-dim);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">
+      ✎ ${typos.length} incident${typos.length>1?'s':''} — Likely same person, name spelled differently
     </div>${buildTable(typos)}`;
   }
-
-  c.innerHTML = html;
+  c.innerHTML=html;
 }
 
-
+// ── Form generation ────────────────────────────────────────────
 function buildFormGen(incomplete){
   const people=Object.keys(incomplete).filter(p=>p&&p.toLowerCase()!=='unassigned');
   if(!people.length){document.getElementById('formgenPanel').style.display='none';return;}
@@ -796,7 +891,12 @@ function buildFormGen(incomplete){
     const link=buildLink(person,entries);const urlLen=link?link.length:0;
     const sizeLabel=urlLen>0?`${urlLen.toLocaleString()} chars`:'';
     const sizeColor=urlLen>6000?'var(--warning)':'var(--success)';
-    return `<div class="person-card" onclick="openPersonModal('${person.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')"><div class="p-avatar" style="background:${color}">${initials}</div><div class="p-name">${person}</div><div class="p-stats"><strong>${entries.length}</strong> incidents · <strong>${totalFields}</strong> missing</div>${sizeLabel?`<div style="font-size:.62rem;color:${sizeColor};margin-top:4px;">🔗 ${sizeLabel}</div>`:''}</div>`;
+    return `<div class="person-card" onclick="openPersonModal('${person.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">
+      <div class="p-avatar" style="background:${color}">${initials}</div>
+      <div class="p-name">${person}</div>
+      <div class="p-stats"><strong>${entries.length}</strong> incidents · <strong>${totalFields}</strong> missing</div>
+      ${sizeLabel?`<div style="font-size:.62rem;color:${sizeColor};margin-top:4px;">🔗 ${sizeLabel}</div>`:''}
+    </div>`;
   }).join('');
 }
 
@@ -810,10 +910,15 @@ function buildLink(person,entries){
       fields:         e.fields,
       rowCount:       e.rowCount||1,
       status:         e.status||'',
+      snState:        e.snState||'',
       isClosureEntry: e.isClosureEntry||false
     }))
   };
-  try{const json=JSON.stringify(payload);const compressed=LZString.compressToEncodedURIComponent(json);return `${GITHUB_PAGES_BASE}/form.html?d=${compressed}`;}catch(err){return null;}
+  try{
+    const json=JSON.stringify(payload);
+    const compressed=LZString.compressToEncodedURIComponent(json);
+    return `${GITHUB_PAGES_BASE}/form.html?d=${compressed}`;
+  }catch(err){return null;}
 }
 
 function openPersonModal(person){
@@ -821,8 +926,15 @@ function openPersonModal(person){
   const totalFields=entries.reduce((s,e)=>s+e.fields.length,0);
   document.getElementById('modalTitle').textContent=person;
   document.getElementById('modalSub').textContent=`${entries.length} incomplete incident${entries.length>1?'s':''} · ${totalFields} missing fields`;
-  const link=buildLink(person,entries);document.getElementById('shareLink').value=link||'Error building link';
-  if(link){const len=link.length,pct=Math.min((len/URL_MAX)*100,100).toFixed(0);const f=document.getElementById('urlSizeFill');document.getElementById('urlSizeText').textContent=`${len.toLocaleString()} / ${URL_MAX.toLocaleString()} chars`;f.style.width=pct+'%';f.className='url-size-fill '+(len>7000?'danger':len>5000?'warn':'safe');}
+  const link=buildLink(person,entries);
+  document.getElementById('shareLink').value=link||'Error building link';
+  if(link){
+    const len=link.length,pct=Math.min((len/URL_MAX)*100,100).toFixed(0);
+    const f=document.getElementById('urlSizeFill');
+    document.getElementById('urlSizeText').textContent=`${len.toLocaleString()} / ${URL_MAX.toLocaleString()} chars`;
+    f.style.width=pct+'%';
+    f.className='url-size-fill '+(len>7000?'danger':len>5000?'warn':'safe');
+  }
   document.getElementById('linkModal').classList.add('open');
 }
 function closeModal(){document.getElementById('linkModal').classList.remove('open');}
@@ -835,6 +947,7 @@ function copyAllLinks(){
   navigator.clipboard.writeText(lines.join('\n\n')).then(()=>toast(`✓ ${lines.length} links copied`));
 }
 
+// ── Responses tab ──────────────────────────────────────────────
 async function loadResponses(){
   const url=getAppsScriptUrl();if(!url){toast('⚠️ Paste your Apps Script URL first');return;}
   document.getElementById('responsesTable').innerHTML='<div class="empty"><div style="font-size:1.4rem">⏳</div>Loading…</div>';
@@ -844,46 +957,22 @@ async function loadResponses(){
     const rows=data.data;document.getElementById('respCount').textContent=rows.length;
     if(!rows.length){document.getElementById('responsesTable').innerHTML='<div class="empty"><div class="ck">📭</div>No responses yet</div>';return;}
 
-    // Matches exact sheet column order
-    const DISPLAY_COLS = [
+    const DISPLAY_COLS=[
       'Timestamp','Person','SR#','Description',
-      'SR Open Date','Assignment Date','Incident Category','Type',
+      'SR Open Date','Assignment Date','Incident Category','Type1',
       'CSU','Priority','Severity','Requested By','Worked By','Status',
-      'Current Owner','Comments','Module','Close Date',
+      'Current Owner','Comments','Module Classification','Close Date',
       'Detail Description and Solution','SAAS Support SR (if any)','Row Count'
     ];
 
-    // Normalise each row — handle old rows where data is in a raw JSON blob column
-    const normalized = rows.map(row => {
-      // Try to parse any raw JSON blob present (old submissions)
-      let parsed = {};
-      const rawJson = row['Raw Fields JSON'] || '';
-      if(rawJson && rawJson.toString().startsWith('{')){
-        try { parsed = JSON.parse(rawJson); } catch(e){}
-      }
-      // 'Type1' in form → 'Type' in sheet; 'Module Classification' → 'Module'
-      if(parsed['Type1']  && !parsed['Type'])   parsed['Type']   = parsed['Type1'];
-      if(parsed['Module Classification'] && !parsed['Module']) parsed['Module'] = parsed['Module Classification'];
-      if(parsed['Submitted At'] && !row['Timestamp']) row['Timestamp'] = parsed['Submitted At'];
-
-      const merged = {};
-      DISPLAY_COLS.forEach(col => {
-        const direct = row[col];
-        const fromJson = parsed[col] || '';
-        const val = (direct !== undefined && direct !== null && direct !== '' && direct !== '—')
-          ? direct : fromJson;
-        merged[col] = val;
-      });
-      return merged;
-    });
-
-    const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const isEmpty = v => v === undefined || v === null || v === '' || v === '—';
+    const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const isEmpty=v=>v===undefined||v===null||v===''||v==='—';
 
     document.getElementById('responsesTable').innerHTML=`<table>
       <thead><tr>${DISPLAY_COLS.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
-      <tbody>${normalized.map(row=>`<tr>${DISPLAY_COLS.map(col=>{
-        const v=row[col]; const empty=isEmpty(v);
+      <tbody>${rows.map(row=>`<tr>${DISPLAY_COLS.map(col=>{
+        const v=row[col]||row[col.replace('Type1','Type')]||row[col.replace('Module Classification','Module')]||'';
+        const empty=isEmpty(v);
         return `<td style="${empty?'color:var(--text-ghost)':''}">${esc(empty?'—':v)}</td>`;
       }).join('')}</tr>`).join('')}</tbody>
     </table>`;
@@ -894,7 +983,6 @@ function exportCSV(){
   const rows=Array.from(table.querySelectorAll('tr')).map(tr=>Array.from(tr.querySelectorAll('th,td')).map(c=>`"${c.textContent.replace(/"/g,'""')}"`).join(','));
   const blob=new Blob([rows.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`responses_${new Date().toISOString().slice(0,10)}.csv`;a.click();toast('⬇ CSV downloaded');
 }
-
 function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
 loadConfig();
 </script>
