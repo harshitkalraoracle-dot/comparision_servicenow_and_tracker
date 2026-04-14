@@ -15,7 +15,10 @@
     --paper: #fafaf8; --paper2: #f2f2ee; --rule: #e0e0d8;
     --accent: #4f46e5; --accent-light: #ede9fe;
     --danger: #dc2626; --success: #059669; --warning: #d97706;
-    --resolved-bg: #f0fdf4; --resolved-border: #86efac;
+    --resolved-color: #ea580c;
+    --resolved-bg: #fff7ed; --resolved-border: #fed7aa;
+    --closed-color: #2563eb;
+    --closed-bg: #eff6ff; --closed-border: #bfdbfe;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:'DM Sans',sans-serif; background:var(--paper2); color:var(--ink); min-height:100vh; padding:0 0 100px; }
@@ -40,47 +43,39 @@
 
   .form-wrap { max-width:760px; margin:28px auto 0; padding:0 24px; }
 
-  /* ── Incident card ── */
   .incident-card { background:white; border-radius:12px; border:1px solid var(--rule); margin-bottom:20px; overflow:hidden; transition:box-shadow .2s, border-color .2s; }
   .incident-card.filled { border-color:#bbf7d0; box-shadow:0 0 0 1px #bbf7d0; }
   .incident-card.is-resolved { border-color:var(--resolved-border); }
+  .incident-card.is-closed   { border-color:var(--closed-border); }
 
   .incident-head { padding:16px 22px; background:var(--paper2); border-bottom:1px solid var(--rule); display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
   .incident-card.is-resolved .incident-head { background:var(--resolved-bg); }
+  .incident-card.is-closed   .incident-head { background:var(--closed-bg); }
   .incident-sr { font-weight:600; font-size:.85rem; color:var(--accent); }
   .incident-desc { font-size:.78rem; color:var(--ink-soft); margin-top:3px; line-height:1.4; }
 
   .badges { display:flex; gap:6px; align-items:center; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
   .field-count-badge { font-size:.68rem; padding:3px 9px; border-radius:12px; background:var(--accent-light); color:var(--accent); white-space:nowrap; font-weight:500; }
-  .badge-resolved { font-size:.65rem; padding:3px 9px; border-radius:12px; background:#d1fae5; color:var(--success); white-space:nowrap; font-weight:600; border:1px solid #6ee7b7; }
-  .badge-rows { font-size:.65rem; padding:3px 8px; border-radius:12px; background:#f3e8ff; color:#7c3aed; white-space:nowrap; font-weight:500; }
+  .badge-resolved { font-size:.65rem; padding:3px 9px; border-radius:12px; background:#ffedd5; color:var(--resolved-color); white-space:nowrap; font-weight:600; border:1px solid var(--resolved-border); }
+  .badge-closed   { font-size:.65rem; padding:3px 9px; border-radius:12px; background:#dbeafe; color:var(--closed-color);   white-space:nowrap; font-weight:600; border:1px solid var(--closed-border); }
+  .badge-rows     { font-size:.65rem; padding:3px 8px; border-radius:12px; background:#f3e8ff; color:#7c3aed; white-space:nowrap; font-weight:500; }
 
-  /* Resolved notice inside card */
-  .resolved-notice {
+  .status-notice {
     margin:14px 22px 0;
-    background:#ecfdf5; border:1px solid #6ee7b7; border-radius:8px;
-    padding:10px 14px; font-size:.78rem; color:#065f46;
+    border-radius:8px; padding:10px 14px; font-size:.78rem;
     display:flex; gap:8px; align-items:flex-start;
   }
-  .resolved-notice strong { color:#047857; }
-
-  /* Section divider inside a card */
-  .fields-section-title {
-    padding:10px 22px 0;
-    font-size:.65rem; letter-spacing:.1em; text-transform:uppercase;
-    color:var(--ink-ghost); font-weight:600;
-    display:flex; align-items:center; gap:8px;
-  }
-  .fields-section-title::after { content:''; flex:1; height:1px; background:var(--rule); }
+  .status-notice.resolved-notice { background:#fff7ed; border:1px solid var(--resolved-border); color:#7c2d12; }
+  .status-notice.closed-notice   { background:#eff6ff; border:1px solid var(--closed-border);   color:#1e3a8a; }
 
   .incident-fields { padding:14px 22px 18px; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   .field-full { grid-column:1/-1; }
   .field-group { display:flex; flex-direction:column; gap:6px; }
   .field-label { font-size:.68rem; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-ghost); font-weight:500; display:flex; align-items:center; gap:4px; }
   .req-star { color:var(--danger); }
-  .opt-tag { font-size:.6rem; background:#f3e8ff; color:#7c3aed; padding:1px 5px; border-radius:3px; text-transform:none; letter-spacing:0; font-weight:400; }
-  /* Extra required fields added for resolved incidents */
-  .resolved-req-tag { font-size:.6rem; background:#d1fae5; color:var(--success); padding:1px 5px; border-radius:3px; text-transform:none; letter-spacing:0; font-weight:600; }
+  .opt-tag         { font-size:.6rem; background:#f3e8ff; color:#7c3aed; padding:1px 5px; border-radius:3px; text-transform:none; letter-spacing:0; font-weight:400; }
+  .resolved-req-tag{ font-size:.6rem; background:#ffedd5; color:var(--resolved-color); padding:1px 5px; border-radius:3px; text-transform:none; letter-spacing:0; font-weight:600; border:1px solid var(--resolved-border); }
+  .closed-req-tag  { font-size:.6rem; background:#dbeafe; color:var(--closed-color);   padding:1px 5px; border-radius:3px; text-transform:none; letter-spacing:0; font-weight:600; border:1px solid var(--closed-border); }
 
   input[type="text"], input[type="date"], textarea, select {
     font-family:'DM Sans',sans-serif; font-size:.85rem; color:var(--ink);
@@ -170,7 +165,7 @@
   </div>
 
   <div class="form-wrap">
-    <div class="notice">⚠️ Fields marked <strong>*</strong> are required. If an incident is <strong>Resolved or Closed</strong>, all fields (including Close Date, Detail Description &amp; Solution, and SAAS Support SR) become mandatory.</div>
+    <div class="notice">⚠️ Fields marked <strong>*</strong> are required. If an incident is <strong>Resolved</strong> or <strong>Closed</strong>, closure fields (Close Date, Detail Description &amp; Solution, SAAS Support SR) become mandatory.</div>
     <div id="formContainer"></div>
   </div>
 </div>
@@ -194,22 +189,34 @@
 // ══════════════════════════════════════════════════════════════
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyuTI97pJbOHmr2G1O22gTbXWS8bU0GMkMGI6gOh2dRDt4ksLyVIHoc2HLI19Xd_6IaTg/exec";
 
-// Fields that are normally optional but become REQUIRED when status is Resolved/Closed
-const RESOLVED_EXTRA_REQUIRED = [
+// ═══════════════════════════════════════════════════════════════
+//  FIELD CONFIG — names match your Tracker Excel headers exactly
+// ═══════════════════════════════════════════════════════════════
+
+// Fields that become REQUIRED when SN state is Resolved OR Closed
+const CLOSURE_EXTRA_REQUIRED = [
   'Close Date',
   'Detail Description and Solution',
   'SAAS Support SR (if any)'
 ];
 
 // Fields that are always optional regardless of status
-const ALWAYS_OPTIONAL = ['Module', 'Current Owner'];
+const ALWAYS_OPTIONAL = ['Module Classification', 'Current Owner'];
 
-// All optional fields (union — used to decide initial label)
-const OPTIONAL_FIELDS = ['Module', 'Close Date', 'Detail Description and Solution', 'SAAS Support SR (if any)', 'Current Owner'];
+// All optional fields (for label decoration)
+const OPTIONAL_FIELDS = [
+  'Module Classification', 'SR Open Date', 'Close Date',
+  'Detail Description and Solution', 'SAAS Support SR (if any)', 'Current Owner'
+];
 
-// Statuses that trigger full required-field expansion
-const RESOLVED_STATUSES = ['Resolved', 'Closed'];
+// Statuses that trigger closure field expansion
+// NOTE: Resolved and Closed are treated separately for display but
+//       both trigger the same field requirements
+const RESOLVED_STATUSES = ['Resolved'];
+const CLOSED_STATUSES   = ['Closed'];
+const TERMINAL_STATUSES = [...RESOLVED_STATUSES, ...CLOSED_STATUSES];
 
+// Field type config — keys match Tracker column names
 const FIELD_CONFIG = {
   'SR Open Date':    { type:'date' },
   'Assignment Date': { type:'date' },
@@ -217,26 +224,31 @@ const FIELD_CONFIG = {
   'Priority':        { type:'select', options:['P1 - Critical','P2 - High','P3 - Medium','P4 - Low'] },
   'Severity':        { type:'select', options:['1','2','3','4','5','6','7','8','9'] },
   'Status':          { type:'select', options:['Open','In Progress','Pending','Resolved','Closed'] },
+  // Tracker uses 'Type1' as the actual column name
   'Type1':           { type:'select', options:['Type1','Type2','Type3','TBD','FSR'] },
   'Incident Category': { type:'select', options:['Configuration','Enhancement','NewReport','Change','Data Fix','How To','Documentation'] },
-  'Module': { type:'select', options:[
+  // Tracker uses 'Module Classification' as the actual column name
+  'Module Classification': { type:'select', options:[
     'OTM - OTM','OIC - OIC','CPQ - CPQ','EPM - PBCS','Tech -',
     'ERP - Fixed Assets','ERP - Accounts Payables','ERP - Accounts Receivable',
     'ERP - General Ledger','SCM - OM','SCM - Procurement','SCM - Planning',
     'General - NA','ERP - Monitoring','ERP - BI Reports','SAAS+ - NA',
     'WMS - WMS','SCM - INV','SCM - Costing'
   ]},
-  'Comments':        { type:'textarea' },
-  'Description':     { type:'textarea' },
+  'Comments':                        { type:'textarea' },
+  'Description':                     { type:'textarea' },
   'Detail Description and Solution': { type:'textarea' },
-  'SAAS Support SR (if any)': { type:'text', placeholder:'e.g. SR123456 or N/A' },
+  'SAAS Support SR (if any)':        { type:'text', placeholder:'e.g. SR123456 or N/A' },
 };
 
-const WIDE_FIELDS = ['Comments','Description','Detail Description and Solution','SAAS Support SR (if any)','CSU','Requested By','Current Owner'];
+const WIDE_FIELDS = [
+  'Comments','Description','Detail Description and Solution',
+  'SAAS Support SR (if any)','CSU','Requested By','Current Owner'
+];
 
 // ── State ──────────────────────────────────────────────────────
 let formData = null;
-// Map of ei -> Set of fields that are currently required (dynamic, changes when Status changes)
+// Per-entry set of currently-required fields (dynamic, changes on Status change)
 const dynamicRequired = {};
 
 // ── Init ──────────────────────────────────────────────────────
@@ -267,20 +279,23 @@ function init() {
 function renderForm() {
   document.getElementById('heroName').textContent      = formData.person;
   document.getElementById('metaIncidents').textContent = formData.entries.length;
-  document.getElementById('metaDate').textContent      = new Date().toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('metaDate').textContent      = new Date().toLocaleDateString('en-IN', {
+    day:'numeric', month:'long', year:'numeric'
+  });
 
-  // Count total fields across all entries
   const totalAll = formData.entries.reduce((s,e) => s + e.fields.length, 0);
   document.getElementById('metaFields').textContent = totalAll;
 
   // Build initial dynamicRequired sets
   formData.entries.forEach((entry, ei) => {
-    const isAlreadyClosed = RESOLVED_STATUSES.includes((entry.status||'').trim());
+    // snState carries what SN says (Resolved / Closed / etc.)
+    const snSt = (entry.snState || entry.status || '').trim();
+    const isTerminal = TERMINAL_STATUSES.includes(snSt);
+
     const baseRequired = entry.fields.filter(f => !ALWAYS_OPTIONAL.includes(f));
-    // For already-closed entries, resolved-extra fields that aren't in entry.fields
-    // are shown immediately and must count toward progress from the start
-    const extraRequired = isAlreadyClosed
-      ? RESOLVED_EXTRA_REQUIRED.filter(f => !entry.fields.includes(f))
+    // Extra closure fields that aren't already in entry.fields
+    const extraRequired = isTerminal
+      ? CLOSURE_EXTRA_REQUIRED.filter(f => !entry.fields.includes(f))
       : [];
     dynamicRequired[ei] = new Set([...baseRequired, ...extraRequired]);
   });
@@ -296,46 +311,77 @@ function renderForm() {
   updateProgress();
 }
 
-// Build the full HTML for one incident card
+// Determine if a given status string is Resolved, Closed, or other
+function classifyStatus(st) {
+  const s = (st||'').trim();
+  if (RESOLVED_STATUSES.includes(s)) return 'resolved';
+  if (CLOSED_STATUSES.includes(s))   return 'closed';
+  return 'open';
+}
+
+// Build card HTML for one entry
 function buildCardHTML(entry, ei) {
   const isClosure      = !!entry.isClosureEntry;
   const originalFields = entry.fields;
-  // Is this ticket already Resolved/Closed in the tracker?
-  const isAlreadyClosed = RESOLVED_STATUSES.includes((entry.status||'').trim());
 
-  // For closure cards: all fields already set, no extras needed
-  // For already-closed cards: resolved-extra fields that aren't already in the entry
-  //   should be shown immediately (not hidden) since the ticket IS closed
-  // For normal cards: resolved-extra fields stay hidden until user picks Resolved/Closed
-  const resolvedExtras = isClosure
+  // Use snState to determine terminal status (what SN says)
+  const snSt       = (entry.snState || '').trim();
+  const trackerSt  = (entry.status  || '').trim();
+  // If snState says terminal, the card is already terminal from the start
+  const initStatus = snSt || trackerSt;
+  const initClass  = classifyStatus(initStatus);  // 'resolved' | 'closed' | 'open'
+  const isInitTerminal = initClass !== 'open';
+
+  // Closure fields that aren't already in the entry's missing-field list
+  const closureExtras = isClosure
     ? []
-    : RESOLVED_EXTRA_REQUIRED.filter(f => !originalFields.includes(f));
+    : CLOSURE_EXTRA_REQUIRED.filter(f => !originalFields.includes(f));
 
-  const allFields = [...originalFields, ...resolvedExtras];
+  const allFields = [...originalFields, ...closureExtras];
   const fieldRows = allFields.map(field =>
-    buildFieldHTML(field, ei, resolvedExtras.includes(field), isClosure, isAlreadyClosed)
+    buildFieldHTML(field, ei, closureExtras.includes(field), isClosure, isInitTerminal, initClass)
   ).join('');
 
-  const hasResolvedExtras = resolvedExtras.length > 0;
-
+  // Banner for closure-doc cards
   const closureBanner = isClosure ? `
-    <div class="resolved-notice" style="display:flex;">
-      <span>🔒</span>
-      <div>This incident is <strong>Closed/Resolved in ServiceNow</strong> — please fill the closure documentation fields below so the Tracker can be updated.</div>
+    <div class="status-notice ${initClass==='closed'?'closed-notice':'resolved-notice'}" style="display:flex;">
+      <span>${initClass==='closed'?'🔵':'🟠'}</span>
+      <div>This incident is <strong>${initClass==='closed'?'Closed':'Resolved'} in ServiceNow</strong> — please fill the closure documentation fields so the Tracker can be updated.</div>
     </div>` : '';
 
-  // For already-closed tracker entries, show the resolved notice immediately
-  const alreadyClosedBanner = (!isClosure && isAlreadyClosed) ? `
-    <div class="resolved-notice" id="resolvedNotice_${ei}" style="display:flex;">
-      <span>✅</span>
-      <div>This incident is already <strong>${entry.status}</strong> in the Tracker — closure fields below are required.</div>
-    </div>` : (!isClosure && hasResolvedExtras) ? `
-    <div class="resolved-notice" id="resolvedNotice_${ei}" style="display:none;">
-      <span>✅</span>
-      <div>This incident is <strong>Resolved/Closed</strong> — the fields below marked <strong style="color:var(--success);">resolved-req</strong> are now required to complete closure documentation.</div>
+  // Banner for non-closure cards that start in a terminal state
+  const terminalBanner = (!isClosure && isInitTerminal && closureExtras.length > 0) ? `
+    <div class="status-notice ${initClass+'-notice'}" id="terminalNotice_${ei}" style="display:flex;">
+      <span>${initClass==='closed'?'🔵':'🟠'}</span>
+      <div>This incident is already <strong>${initStatus}</strong> — closure fields below are required.</div>
+    </div>` : (!isClosure && closureExtras.length > 0) ? `
+    <div class="status-notice resolved-notice" id="terminalNotice_${ei}" style="display:none;">
+      <span>⚠️</span>
+      <div>Incident marked as <strong id="terminalNoticeStatus_${ei}">Resolved/Closed</strong> — closure fields are now required.</div>
     </div>` : '';
 
-  return `<div class="incident-card${(isClosure||isAlreadyClosed)?' is-resolved':''}" id="card_${ei}">
+  // Card CSS class
+  const cardClass = isClosure
+    ? `incident-card is-${initClass}`
+    : isInitTerminal ? `incident-card is-${initClass}` : 'incident-card';
+
+  // Badge for status
+  let statusBadge = '';
+  if (isClosure) {
+    statusBadge = initClass==='closed'
+      ? `<div class="badge-closed">🔵 Closed</div>`
+      : `<div class="badge-resolved">🟠 Resolved</div>`;
+  } else if (isInitTerminal) {
+    statusBadge = initClass==='closed'
+      ? `<div class="badge-closed">🔵 Closed</div>`
+      : `<div class="badge-resolved">🟠 Resolved</div>`;
+  } else {
+    statusBadge = `
+      <div class="badge-resolved" id="badgeResolved_${ei}" style="display:none;">🟠 Resolved</div>
+      <div class="badge-closed"   id="badgeClosed_${ei}"   style="display:none;">🔵 Closed</div>`;
+  }
+
+  return `<div class="${cardClass}" id="card_${ei}">
     <div class="incident-head">
       <div>
         <div class="incident-sr">SR# ${entry.sr}</div>
@@ -344,44 +390,42 @@ function buildCardHTML(entry, ei) {
       <div class="badges">
         <div class="field-count-badge" id="badge_count_${ei}">${entry.fields.length} field${entry.fields.length>1?'s':''}</div>
         ${(entry.rowCount||1)>1 ? `<div class="badge-rows">${entry.rowCount} rows</div>` : ''}
-        ${isClosure
-          ? `<div class="badge-resolved" style="display:inline-flex;">🔒 Closure Docs</div>`
-          : isAlreadyClosed
-            ? `<div class="badge-resolved" style="display:inline-flex;">✓ ${entry.status}</div>`
-            : `<div class="badge-resolved" id="badge_resolved_${ei}" style="display:none;">✓ Resolved</div>`}
+        ${statusBadge}
       </div>
     </div>
     ${closureBanner}
-    ${alreadyClosedBanner}
+    ${terminalBanner}
     <div class="incident-fields" id="fields_${ei}">${fieldRows}</div>
   </div>`;
 }
 
 // Build a single field's HTML
-// isClosure=true  → field belongs to a closure-doc card: always visible, always required, green label
-// isResolvedExtra → field is hidden until user picks Resolved/Closed in the Status dropdown
-function buildFieldHTML(field, ei, isResolvedExtra, isClosure, isAlreadyClosed) {
+function buildFieldHTML(field, ei, isClosureExtra, isClosure, isInitTerminal, initStatusClass) {
   const cfg    = FIELD_CONFIG[field] || { type:'text' };
   const isOpt  = isClosure ? false : ALWAYS_OPTIONAL.includes(field);
   const isWide = WIDE_FIELDS.includes(field) || cfg.type === 'textarea';
   const fid    = `f_${ei}_${field.replace(/\W+/g,'_')}`;
   const wrapId = `wrap_${ei}_${field.replace(/\W+/g,'_')}`;
 
-  // Already-closed entries: resolved-extra fields are visible & required immediately
-  // Normal entries: resolved-extra fields are hidden until user picks Resolved/Closed
-  const forceShow = isAlreadyClosed && isResolvedExtra;
-  const hiddenCls   = (!isClosure && isResolvedExtra && !forceShow) ? ' resolved-extra-field' : '';
-  const hiddenStyle = (!isClosure && isResolvedExtra && !forceShow) ? ' style="display:none;"' : '';
-  const startRequired = (isClosure || forceShow) ? 'true'
-                      : (isResolvedExtra ? 'false' : String(!isOpt));
+  // Visibility: closure extras are hidden until Status changes (unless already terminal)
+  const forceShow = isInitTerminal && isClosureExtra;
+  const hidden    = !isClosure && isClosureExtra && !forceShow;
+
+  const hiddenCls   = hidden ? ' resolved-extra-field' : '';
+  const hiddenStyle = hidden ? ' style="display:none;"' : '';
+
+  // data-required initial value
+  const startRequired = (isClosure || forceShow)
+    ? 'true'
+    : isClosureExtra ? 'false' : String(!isOpt);
 
   let inputHtml = '';
   if (cfg.type === 'select') {
-    const onchangeHandler = field === 'Status'
+    const onchangeStr = field === 'Status'
       ? `onchange="onStatusChange(this,${ei})"`
       : `onchange="onFieldChange(this)"`;
     inputHtml = `<div class="select-wrap">
-      <select id="${fid}" data-ei="${ei}" data-field="${field}" data-required="${startRequired}" ${onchangeHandler}>
+      <select id="${fid}" data-ei="${ei}" data-field="${field}" data-required="${startRequired}" ${onchangeStr}>
         <option value="">— Select —</option>
         ${cfg.options.map(o=>`<option value="${o}">${o}</option>`).join('')}
       </select></div>`;
@@ -395,12 +439,22 @@ function buildFieldHTML(field, ei, isResolvedExtra, isClosure, isAlreadyClosed) 
       placeholder="${cfg.placeholder || ('Enter ' + field.toLowerCase() + '…')}" oninput="onFieldChange(this)">`;
   }
 
-  // Label badge
+  // Label tag — closure extras get a coloured tag matching Resolved/Closed
   let labelTag = '';
-  if (isClosure || forceShow) {
-    labelTag = '<span class="resolved-req-tag">closure</span>';
-  } else if (isResolvedExtra) {
-    labelTag = '<span class="opt-tag" id="lbl_' + fid + '">optional</span>';
+  if (isClosure) {
+    labelTag = initStatusClass === 'closed'
+      ? '<span class="closed-req-tag">closure</span>'
+      : '<span class="resolved-req-tag">closure</span>';
+  } else if (isClosureExtra) {
+    if (forceShow) {
+      // Already terminal at load time — show coloured tag immediately
+      labelTag = initStatusClass === 'closed'
+        ? '<span class="closed-req-tag" id="lbl_' + fid + '">closure</span>'
+        : '<span class="resolved-req-tag" id="lbl_' + fid + '">closure</span>';
+    } else {
+      // Hidden for now — starts as "optional"
+      labelTag = '<span class="opt-tag" id="lbl_' + fid + '">optional</span>';
+    }
   } else if (isOpt) {
     labelTag = '<span class="opt-tag">optional</span>';
   } else {
@@ -415,26 +469,41 @@ function buildFieldHTML(field, ei, isResolvedExtra, isClosure, isAlreadyClosed) 
   </div>`;
 }
 
-// ── Status change handler ─────────────────────────────────────
+// ── Status change ──────────────────────────────────────────────
 function onStatusChange(el, ei) {
   el.classList.toggle('filled-field', el.value.trim().length > 0);
 
-  const entry        = formData.entries[ei];
-  const isResolved   = RESOLVED_STATUSES.includes(el.value);
+  const entry       = formData.entries[ei];
+  const statusClass = classifyStatus(el.value);   // 'resolved' | 'closed' | 'open'
+  const isTerminal  = statusClass !== 'open';
 
-  // Toggle resolved badge & notice
-  const badgeEl  = document.getElementById(`badge_resolved_${ei}`);
-  const noticeEl = document.getElementById(`resolvedNotice_${ei}`);
-  const cardEl   = document.getElementById(`card_${ei}`);
+  // Toggle badges
+  const bR = document.getElementById(`badgeResolved_${ei}`);
+  const bC = document.getElementById(`badgeClosed_${ei}`);
+  if(bR) bR.style.display = statusClass==='resolved' ? 'inline-flex' : 'none';
+  if(bC) bC.style.display = statusClass==='closed'   ? 'inline-flex' : 'none';
 
-  if (badgeEl)  badgeEl.style.display  = isResolved ? 'inline-flex' : 'none';
-  if (noticeEl) noticeEl.style.display = isResolved ? 'flex' : 'none';
-  if (cardEl)   cardEl.classList.toggle('is-resolved', isResolved);
+  // Toggle notice
+  const noticeEl = document.getElementById(`terminalNotice_${ei}`);
+  const noticeSt = document.getElementById(`terminalNoticeStatus_${ei}`);
+  if(noticeEl) {
+    noticeEl.style.display = isTerminal ? 'flex' : 'none';
+    // Swap notice colour
+    noticeEl.className = 'status-notice ' + (statusClass==='closed'?'closed-notice':'resolved-notice');
+    if(noticeSt) noticeSt.textContent = el.value;
+  }
 
-  // Which resolved-extra fields are not already in the entry?
-  const resolvedExtras = RESOLVED_EXTRA_REQUIRED.filter(f => !entry.fields.includes(f));
+  // Toggle card border class
+  const cardEl = document.getElementById(`card_${ei}`);
+  if(cardEl) {
+    cardEl.classList.remove('is-resolved','is-closed');
+    if(isTerminal) cardEl.classList.add('is-'+statusClass);
+  }
 
-  resolvedExtras.forEach(field => {
+  // Closure extras that aren't in the original fields list
+  const closureExtras = CLOSURE_EXTRA_REQUIRED.filter(f => !entry.fields.includes(f));
+
+  closureExtras.forEach(field => {
     const wrapId  = `wrap_${ei}_${field.replace(/\W+/g,'_')}`;
     const fid     = `f_${ei}_${field.replace(/\W+/g,'_')}`;
     const wrapEl  = document.getElementById(wrapId);
@@ -442,28 +511,28 @@ function onStatusChange(el, ei) {
     const lblEl   = document.getElementById(`lbl_${fid}`);
     if (!wrapEl || !inputEl) return;
 
-    if (isResolved) {
-      wrapEl.style.display     = '';           // show the field
-      inputEl.dataset.required = 'true';       // now counts toward progress
+    if (isTerminal) {
+      wrapEl.style.display     = '';
+      inputEl.dataset.required = 'true';
       dynamicRequired[ei].add(field);
-      // Swap label from "optional" → "resolved-req *"
-      if (lblEl) { lblEl.className = 'resolved-req-tag'; lblEl.textContent = 'resolved-req'; }
+      if (lblEl) {
+        lblEl.className   = statusClass==='closed' ? 'closed-req-tag' : 'resolved-req-tag';
+        lblEl.textContent = 'closure';
+      }
     } else {
-      wrapEl.style.display     = 'none';       // hide again
-      inputEl.dataset.required = 'false';      // no longer counts
+      wrapEl.style.display     = 'none';
+      inputEl.dataset.required = 'false';
       dynamicRequired[ei].delete(field);
-      // Swap label back to "optional"
-      if (lblEl) { lblEl.className = 'opt-tag'; lblEl.textContent = 'optional'; }
+      if (lblEl) { lblEl.className='opt-tag'; lblEl.textContent='optional'; }
     }
   });
 
-  // For RESOLVED_EXTRA_REQUIRED fields that were already in the original entry
-  // (already listed as missing), just flip their required state
-  RESOLVED_EXTRA_REQUIRED.filter(f => entry.fields.includes(f)).forEach(field => {
+  // Closure extras that WERE already in the original fields list
+  CLOSURE_EXTRA_REQUIRED.filter(f => entry.fields.includes(f)).forEach(field => {
     const fid     = `f_${ei}_${field.replace(/\W+/g,'_')}`;
     const inputEl = document.getElementById(fid);
     if (!inputEl) return;
-    if (isResolved) {
+    if (isTerminal) {
       inputEl.dataset.required = 'true';
       dynamicRequired[ei].add(field);
     } else {
@@ -491,14 +560,11 @@ function checkCardFilled(ei) {
 
 // ── Progress ──────────────────────────────────────────────────
 function updateProgress() {
-  // Count all currently-required inputs across all cards
-  let total  = 0;
-  let filled = 0;
+  let total = 0, filled = 0;
   document.querySelectorAll('[data-required="true"]').forEach(el => {
     total++;
     if (el.value.trim()) filled++;
   });
-
   const pct = total > 0 ? Math.round((filled / total) * 100) : 0;
   document.getElementById('progressFill').style.width  = pct + '%';
   document.getElementById('progressDone').textContent  = filled;
@@ -528,19 +594,27 @@ async function submitForm() {
   btn.disabled    = true;
   btn.textContent = 'Submitting…';
 
-  // Collect all visible field values per entry
+  // Collect values — use actual Tracker column names as keys
   const entries = formData.entries.map((entry, ei) => {
-    const resolvedExtras = RESOLVED_EXTRA_REQUIRED.filter(f => !entry.fields.includes(f));
-    const allFields = [...entry.fields, ...resolvedExtras];
+    const closureExtras = CLOSURE_EXTRA_REQUIRED.filter(f => !entry.fields.includes(f));
+    const allFields = [...entry.fields, ...closureExtras];
     const fields = {};
     allFields.forEach(field => {
       const fid = `f_${ei}_${field.replace(/\W+/g,'_')}`;
       const el  = document.getElementById(fid);
-      if (el && el.value.trim() && el.closest('.field-group') && el.closest('.field-group').style.display !== 'none') {
-        fields[field] = el.value.trim();
+      if (el && el.value.trim()) {
+        const wrap = el.closest('.field-group');
+        if (!wrap || wrap.style.display !== 'none') {
+          fields[field] = el.value.trim();
+        }
       }
     });
-    return { sr: entry.sr, description: entry.description, fields, rowCount: entry.rowCount || 1 };
+    return {
+      sr:          entry.sr,
+      description: entry.description,
+      fields,
+      rowCount:    entry.rowCount || 1
+    };
   });
 
   const payload = {
@@ -550,44 +624,39 @@ async function submitForm() {
     entries
   };
 
-  // ── Submission strategy ───────────────────────────────────────────────────
-  // Apps Script is cross-origin. Browsers block reading the response (CORS),
-  // but the script DOES execute as long as the request reaches Google.
-  // Strategy: try three methods in order, show success after any one lands.
-
   const jsonStr = JSON.stringify(payload);
   let submitted = false;
 
-  // Method 1: POST with no-cors (works in Chrome/Edge/Firefox with updated form)
+  // Method 1: POST no-cors
   try {
     const body = new FormData();
     body.append('action', 'submit');
     body.append('data', jsonStr);
     await fetch(APPS_SCRIPT_URL, { method:'POST', body, mode:'no-cors' });
     submitted = true;
-  } catch(e1) { /* fall through */ }
+  } catch(e1) {}
 
-  // Method 2: GET with no-cors (works with old Apps Script doGet deployments)
+  // Method 2: GET no-cors
   if (!submitted) {
     try {
       const encoded = encodeURIComponent(jsonStr);
       await fetch(`${APPS_SCRIPT_URL}?action=submit&data=${encoded}`, { mode:'no-cors' });
       submitted = true;
-    } catch(e2) { /* fall through */ }
+    } catch(e2) {}
   }
 
-  // Method 3: Image beacon (bypasses CORS entirely — fire-and-forget)
+  // Method 3: Image beacon
   if (!submitted) {
     try {
-      await new Promise((resolve) => {
+      await new Promise(resolve => {
         const encoded = encodeURIComponent(jsonStr);
         const img = new Image();
-        img.onload = img.onerror = () => resolve(); // either way, request was sent
+        img.onload = img.onerror = () => resolve();
         img.src = `${APPS_SCRIPT_URL}?action=submit&data=${encoded}`;
-        setTimeout(resolve, 5000); // max 5s wait
+        setTimeout(resolve, 5000);
       });
       submitted = true;
-    } catch(e3) { /* fall through */ }
+    } catch(e3) {}
   }
 
   if (submitted) {
