@@ -334,7 +334,7 @@ const GITHUB_PAGES_BASE = "https://harshitkalraoracle-dot.github.io/comparision_
 //
 // TRACKER columns (exact header names in your .xlsx):
 //   S.No, Incident#, Module Classification, SR Open Date, Assignment Date,
-//   Close Date, Incident Category, Type1, CSU, Priority, Severity,
+//   Close Date, Incident Category, Type, CSU, Priority, Severity,
 //   Description, Requested By, Worked By, Status, Current Owner,
 //   Detail Description and Solution, Comments, SAAS Support SR (if any)
 //
@@ -349,10 +349,10 @@ function getSRNum(r, isSN) {
 }
 
 // ── Required Tracker columns (always checked) ──────────────────
-// These match your actual Tracker column headers EXACTLY
+// Tracker uses 'Type' (not 'Type1') — confirmed from actual file headers
 const REQUIRED = [
   'Incident Category',
-  'Type1',
+  'Type',
   'CSU',
   'Priority',
   'Severity',
@@ -373,18 +373,15 @@ const OPTIONAL = [
   'Detail Description and Solution',
   'SAAS Support SR (if any)'
 ];
-const TRACKER_EXCLUDE_FROM_EMPTY_CHECK = ['S.No','Incident#'];
 
 // Closure fields — injected into form when incident is Resolved/Closed in SN
 const CLOSURE_FIELDS = ['Close Date', 'Detail Description and Solution', 'SAAS Support SR (if any)'];
 
-// SN status values
-const SN_RESOLVED_VALUES = ['Resolved'];
-const SN_CLOSED_VALUES   = ['Closed'];
-const SN_TERMINAL        = [...SN_RESOLVED_VALUES, ...SN_CLOSED_VALUES];
-
-// Tracker status values that count as "closed"
-const TR_CLOSED = ['Resolved', 'Closed'];
+// SN terminal states — 'Resolution Pending' is treated like Resolved for gap detection
+// (SN marks it when waiting for customer confirmation before closing)
+const SN_TERMINAL_STATES    = ['Resolved', 'Closed'];
+const SN_NEAR_TERMINAL      = ['Resolution Pending'];  // treated like Resolved in gap logic
+const TR_TERMINAL_STATES    = ['Resolved', 'Closed'];
 
 const AVATAR_COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ef4444','#06b6d4'];
 const URL_MAX = 8000;
@@ -453,47 +450,10 @@ function analyze(){
   // ── Build lookup maps keyed by Incident# ──────────────────────
   const trMap=new Map(), snMap=new Map();
   trData.forEach(r=>{const s=getSRNum(r,false);if(s)trMap.set(s,r);});
-
-  // SN can contain multiple rows for same incident (different exports/updates).
-  // Group by incident and keep both latest row + full update history.
-  const snGrouped=new Map();
-  snData.forEach(r=>{
-    const s=getSRNum(r,true);
-    if(!s) return;
-    const openedRaw=(r['Opened']||'').toString().trim();
-    const openedTs=openedRaw?new Date(openedRaw).getTime():0;
-    if(!snGrouped.has(s)){
-      snGrouped.set(s,{incident:s,latest:r,latestTs:openedTs||0,updates:[r]});
-    } else {
-      const g=snGrouped.get(s);
-      g.updates.push(r);
-      if((openedTs||0)>=g.latestTs){
-        g.latest=r;
-        g.latestTs=openedTs||0;
-      }
-    }
-  });
-  snGrouped.forEach(g=>{
-    g.updates.sort((a,b)=>{
-      const ta=new Date((a['Opened']||'').toString()).getTime()||0;
-      const tb=new Date((b['Opened']||'').toString()).getTime()||0;
-      return tb-ta;
-    });
-    snMap.set(g.incident,g.latest);
-  });
+  snData.forEach(r=>{const s=getSRNum(r,true); if(s)snMap.set(s,r);});
 
   // ── 1. In SN but not in Tracker ───────────────────────────────
-  const missing=[...snGrouped.values()]
-    .filter(g=>g.incident&&!trMap.has(g.incident))
-    .map(g=>({
-      ...g.latest,
-      '__updateCount':g.updates.length,
-      '__updates':g.updates.map(u=>([
-        (u['Opened']||'').toString().trim(),
-        (u['Incident state']||'').toString().trim(),
-        (u['Assigned to']||'').toString().trim()
-      ].filter(Boolean).join(' · '))).filter(Boolean)
-    }));
+  const missing=snData.filter(r=>{const s=getSRNum(r,true);return s&&!trMap.has(s);});
 
   // ── 2. In Tracker but not in SN ───────────────────────────────
   const trackerOnly=trData.filter(r=>{const s=getSRNum(r,false);return s&&!snMap.has(s);});
@@ -501,8 +461,8 @@ function analyze(){
   // ── 3. Priority mismatches ─────────────────────────────────────
   // SN 'Priority' vs Tracker 'Priority' — same column name in both
   const mismatches=[];
-  snMap.forEach((r,srNum)=>{
-    const s=getSRNum(r,true)||srNum;
+  snData.forEach(r=>{
+    const s=getSRNum(r,true);
     if(s&&trMap.has(s)){
       const tr=trMap.get(s);
       const sp=(r['Priority']||'').trim(), tp=(tr['Priority']||'').trim();
@@ -514,19 +474,8 @@ function analyze(){
   });
 
   // ── 4. Incomplete Tracker entries ─────────────────────────────
-  // Check against Tracker column headers. When optional toggle is ON,
-  // include any remaining Tracker columns (except excluded keys) so
-  // empty-check fully reflects uploaded Tracker structure.
-  const trackerHeaders = [...new Set(trData.flatMap(r => Object.keys(r||{})))];
-  const dynamicOptional = trackerHeaders.filter(h =>
-    h &&
-    !TRACKER_EXCLUDE_FROM_EMPTY_CHECK.includes(h) &&
-    !REQUIRED.includes(h) &&
-    !OPTIONAL.includes(h)
-  );
-  const cols = checkOpt
-    ? [...new Set([...REQUIRED, ...OPTIONAL, ...dynamicOptional])]
-    : [...REQUIRED];
+  // Check against the actual Tracker column names
+  const cols = checkOpt ? [...REQUIRED, ...OPTIONAL] : [...REQUIRED];
   const raw  = {};
   trData.forEach(r=>{
     const person=(r['Worked By']||'').trim()||'Unassigned';
@@ -577,14 +526,14 @@ function analyze(){
   // NOTE: 'On Hold-Awaiting Customer' (Tracker) and 'On Hold' (SN) are the SAME
   //       semantic state — different naming conventions. Flag separately so admin
   //       can decide whether to surface them.
-
-  const SN_TERMINAL   = ['Resolved','Closed'];
-  const TR_TERMINAL   = ['Resolved','Closed'];
+  //
+  // NOTE: SN 'Resolution Pending' is treated as near-terminal (like Resolved) —
+  //       SN sets this when waiting for customer sign-off before closing.
 
   const statusDrift = { needs_close:[], sn_advanced:[], ohac_rename:[], other_drift:[], sn_regressed:[] };
 
-  snMap.forEach((r,srNum)=>{
-    const s     = getSRNum(r,true)||srNum;
+  snData.forEach(r=>{
+    const s     = getSRNum(r,true);
     if(!s || !trMap.has(s)) return;
     const tr    = trMap.get(s);
     const snSt  = (r['Incident state']||'').toString().trim();
@@ -592,22 +541,33 @@ function analyze(){
     if(!snSt || !trSt || snSt === trSt) return;   // exact match = no drift
 
     const base = {
-      inc:       s,
-      snState:   snSt,
-      trStatus:  trSt,
-      desc:      (tr['Description']||r['Short description']||'').slice(0,75),
-      by:        tr['Worked By'] || r['Assigned to'] || '—',
-      priority:  tr['Priority']  || r['Priority']   || '—',
-      closeDate: (tr['Close Date']||'').toString().trim(),
+      inc:          s,
+      snState:      snSt,
+      trStatus:     trSt,
+      desc:         (tr['Description']||r['Short description']||'').slice(0,75),
+      by:           tr['Worked By'] || r['Assigned to'] || '—',
+      priority:     tr['Priority']  || r['Priority']   || '—',
+      closeDate:    (tr['Close Date']||'').toString().trim(),
+      snClosedDate: fmtSNDate(r['Closed']),
+      snOpenedDate: fmtSNDate(r['Opened']),
     };
 
-    if(trSt === 'Resolved' && snSt === 'Closed') {
+    // SN effective terminal = Resolved, Closed, Resolution Pending
+    const snIsTerminal     = SN_TERMINAL_STATES.includes(snSt) || SN_NEAR_TERMINAL.includes(snSt);
+    const snIsStrictClosed = snSt === 'Closed';
+    const trIsTerminal     = TR_TERMINAL_STATES.includes(trSt);
+
+    if(trSt === 'Resolved' && snIsStrictClosed) {
+      // Tracker=Resolved, SN=Closed → just needs one more step
       statusDrift.needs_close.push(base);
-    } else if(SN_TERMINAL.includes(snSt) && !TR_TERMINAL.includes(trSt)) {
+    } else if(snIsTerminal && !trIsTerminal) {
+      // SN has closed/resolved but tracker still open
       statusDrift.sn_advanced.push(base);
     } else if(trSt === 'On Hold-Awaiting Customer' && snSt === 'On Hold') {
+      // Same semantic, different label
       statusDrift.ohac_rename.push(base);
-    } else if(TR_TERMINAL.includes(trSt) && !SN_TERMINAL.includes(snSt)) {
+    } else if(trIsTerminal && !snIsTerminal) {
+      // Tracker closed but SN re-opened (data anomaly)
       statusDrift.sn_regressed.push(base);
     } else {
       statusDrift.other_drift.push(base);
@@ -628,8 +588,8 @@ function analyze(){
     return shared.length>=2;
   }
   const ownerMismatches=[];
-  snMap.forEach((r,srNum)=>{
-    const s=getSRNum(r,true)||srNum;
+  snData.forEach(r=>{
+    const s=getSRNum(r,true);
     if(!s||!trMap.has(s)) return;
     const tr=trMap.get(s);
     // SN column is 'Assigned to' (lowercase t)
@@ -715,19 +675,41 @@ function statusBadge(st){
   return `<span class="status-open">${st}</span>`;
 }
 
+// Format a SN datetime value (string "YYYY-MM-DD HH:MM:SS" or Date obj) → "DD MMM YYYY HH:MM"
+// Returns '—' if empty/null.
+function fmtSNDate(val){
+  if(!val) return '—';
+  try{
+    // xlsx.js returns strings; openpyxl returns datetime — both work with new Date()
+    const d = new Date(val);
+    if(isNaN(d.getTime())) return String(val).slice(0,10)||'—';
+    const dd  = String(d.getDate()).padStart(2,'0');
+    const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+    const yr  = d.getFullYear();
+    const hh  = String(d.getHours()).padStart(2,'0');
+    const mm  = String(d.getMinutes()).padStart(2,'0');
+    return `${dd} ${mon} ${yr}, ${hh}:${mm}`;
+  }catch(e){return String(val).slice(0,10)||'—';}
+}
+
 function renderMissing(data){
   document.getElementById('c1').textContent=data.length;
   const c=document.getElementById('t1');
   if(!data.length){c.innerHTML=emptyMsg('All ServiceNow incidents are tracked');return;}
-  c.innerHTML=`<table><thead><tr><th>Incident#</th><th>Priority</th><th>Short Description</th><th>Opened</th><th>Incident State</th><th>Assigned To</th><th>Caller</th></tr></thead><tbody>
+  c.innerHTML=`<table><thead><tr>
+    <th>Incident#</th><th>Priority</th><th>Short Description</th>
+    <th>Opened (SN)</th><th>Closed (SN)</th><th>Incident State</th><th>Assigned To</th>
+  </tr></thead><tbody>
   ${data.map(r=>`<tr>
     <td><strong>${r['Number']||'N/A'}</strong></td>
     <td class="${pc(r['Priority'])}">${r['Priority']||'N/A'}</td>
     <td>${r['Short description']||'N/A'}</td>
-    <td>${r['Opened']||'N/A'}</td>
+    <td style="font-size:.75em;color:var(--text-dim);white-space:nowrap;">${fmtSNDate(r['Opened'])}</td>
+    <td style="font-size:.75em;white-space:nowrap;">${r['Incident state']==='Closed'||r['Incident state']==='Resolved'
+      ? `<span style="color:var(--closed);">${fmtSNDate(r['Closed'])}</span>`
+      : `<span style="color:var(--text-ghost);">—</span>`}</td>
     <td>${statusBadge(r['Incident state'])}</td>
     <td>${r['Assigned to']||'N/A'}</td>
-    <td>${r['Caller']||'N/A'}</td>
   </tr>`).join('')}</tbody></table>`;
 }
 
@@ -865,26 +847,50 @@ function renderStatusDrift(sd){
 
   let html = '';
 
-  // Helper: build a standard drift table
-  const driftTable = (rows, showCloseDate) => `
+  // ── Table builder for closure-relevant buckets (needs_close, sn_advanced) ──
+  // Shows: Tracker Status | SN State | SN Closed Date | Tracker Close Date | Worked By | Desc
+  const closureTable = (rows) => `
     <table><thead><tr>
       <th>Incident#</th><th>Priority</th>
       <th>Tracker Status</th><th>SN State</th>
-      ${showCloseDate?'<th>Close Date in Tracker</th>':''}
+      <th>SN Closed Date</th><th>Tracker Close Date</th>
       <th>Worked By</th><th>Description</th>
     </tr></thead><tbody>
     ${rows.map(r=>{
-      const noDate = showCloseDate && (!r.closeDate || r.closeDate==='' || r.closeDate==='None');
+      const trCloseMissing = !r.closeDate || r.closeDate==='' || r.closeDate==='None';
+      const snClosedVal    = r.snClosedDate && r.snClosedDate!=='—' ? r.snClosedDate : null;
       return `<tr>
         <td><strong>${r.inc}</strong></td>
         <td class="${pc(r.priority)}">${r.priority||'—'}</td>
         <td>${statusBadge(r.trStatus)}</td>
         <td>${statusBadge(r.snState)}</td>
-        ${showCloseDate?`<td>${noDate?'<span style="color:var(--danger);font-size:.75em;">Missing</span>':`<span style="color:var(--success);font-size:.82em;">${r.closeDate}</span>`}</td>`:''}
+        <td style="white-space:nowrap;font-size:.75em;">${snClosedVal
+          ? `<span style="color:var(--closed);">${snClosedVal}</span>`
+          : `<span style="color:var(--text-ghost);">—</span>`}</td>
+        <td style="white-space:nowrap;font-size:.75em;">${trCloseMissing
+          ? `<span style="color:var(--danger);">Missing</span>`
+          : `<span style="color:var(--success);">${r.closeDate}</span>`}</td>
         <td style="font-size:.8em;">${r.by}</td>
         <td style="color:var(--text-dim);font-size:.75em;">${r.desc}</td>
       </tr>`;
     }).join('')}
+    </tbody></table>`;
+
+  // ── Table builder for non-closure buckets (ohac, other, regressed) ──
+  const driftTable = (rows) => `
+    <table><thead><tr>
+      <th>Incident#</th><th>Priority</th>
+      <th>Tracker Status</th><th>SN State</th>
+      <th>Worked By</th><th>Description</th>
+    </tr></thead><tbody>
+    ${rows.map(r=>`<tr>
+      <td><strong>${r.inc}</strong></td>
+      <td class="${pc(r.priority)}">${r.priority||'—'}</td>
+      <td>${statusBadge(r.trStatus)}</td>
+      <td>${statusBadge(r.snState)}</td>
+      <td style="font-size:.8em;">${r.by}</td>
+      <td style="color:var(--text-dim);font-size:.75em;">${r.desc}</td>
+    </tr>`).join('')}
     </tbody></table>`;
 
   const sep = ()=> `<div style="margin-top:22px;border-top:1px solid var(--border);padding-top:18px;"></div>`;
@@ -893,7 +899,7 @@ function renderStatusDrift(sd){
   if(sd.needs_close.length){
     html+=`<div style="font-size:.72rem;font-weight:600;color:#60a5fa;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">
       🔵 ${sd.needs_close.length} incident${sd.needs_close.length>1?'s':''} — Tracker says <em>Resolved</em>, ServiceNow has moved to <em>Closed</em> — update Tracker to Closed
-    </div>${driftTable(sd.needs_close, true)}`;
+    </div>${closureTable(sd.needs_close)}`;
   }
 
   // ── B) SN is Resolved/Closed, Tracker still open/in-progress ─
@@ -901,7 +907,7 @@ function renderStatusDrift(sd){
     if(html) html+=sep();
     html+=`<div style="font-size:.72rem;font-weight:600;color:#f97316;letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">
       🟠 ${sd.sn_advanced.length} incident${sd.sn_advanced.length>1?'s':''} — ServiceNow is Resolved/Closed but Tracker still shows an open status — action required
-    </div>${driftTable(sd.sn_advanced, true)}`;
+    </div>${closureTable(sd.sn_advanced)}`;
   }
 
   // ── C) On Hold-Awaiting Customer (Tracker) vs On Hold (SN) ───
@@ -909,7 +915,7 @@ function renderStatusDrift(sd){
     if(html) html+=sep();
     html+=`<div style="font-size:.72rem;font-weight:600;color:var(--warning);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">
       ⚠ ${sd.ohac_rename.length} incident${sd.ohac_rename.length>1?'s':''} — Naming difference only: Tracker uses <em>On Hold-Awaiting Customer</em>, SN uses <em>On Hold</em> — consider renaming for consistency
-    </div>${driftTable(sd.ohac_rename, false)}`;
+    </div>${driftTable(sd.ohac_rename)}`;
   }
 
   // ── D) Other active-state drift (In Progress ↔ On Hold etc.) ─
@@ -917,7 +923,7 @@ function renderStatusDrift(sd){
     if(html) html+=sep();
     html+=`<div style="font-size:.72rem;font-weight:600;color:var(--text-dim);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">
       ↔ ${sd.other_drift.length} incident${sd.other_drift.length>1?'s':''} — Active-state drift (e.g. In Progress vs On Hold) — verify current state with team
-    </div>${driftTable(sd.other_drift, false)}`;
+    </div>${driftTable(sd.other_drift)}`;
   }
 
   // ── E) Tracker says closed but SN is open (data anomaly) ─────
@@ -925,7 +931,7 @@ function renderStatusDrift(sd){
     if(html) html+=sep();
     html+=`<div style="font-size:.72rem;font-weight:600;color:var(--danger);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;">
       ⚠ ${sd.sn_regressed.length} incident${sd.sn_regressed.length>1?'s':''} — Tracker shows Resolved/Closed but SN is still open — possible data anomaly, verify manually
-    </div>${driftTable(sd.sn_regressed, false)}`;
+    </div>${driftTable(sd.sn_regressed)}`;
   }
 
   c.innerHTML = html;
@@ -1049,8 +1055,8 @@ async function loadResponses(){
       'Timestamp','Person','SR#','Description',
       'SR Open Date','Assignment Date','Incident Category','Type',
       'CSU','Priority','Severity','Requested By','Worked By','Status',
-      'Current Owner','Comments','Module','Close Date',
-      'Detail Description and Solution','SAAS Support SR (if any)'
+      'Current Owner','Comments','Module Classification','Close Date',
+      'Detail Description and Solution','SAAS Support SR (if any)','Row Count'
     ];
 
     const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1059,10 +1065,7 @@ async function loadResponses(){
     document.getElementById('responsesTable').innerHTML=`<table>
       <thead><tr>${DISPLAY_COLS.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
       <tbody>${rows.map(row=>`<tr>${DISPLAY_COLS.map(col=>{
-        const v=row[col]
-          || row[col.replace('Type','Type1')]
-          || row[col.replace('Module','Module Classification')]
-          || '';
+        const v=row[col]||'';
         const empty=isEmpty(v);
         return `<td style="${empty?'color:var(--text-ghost)':''}">${esc(empty?'—':v)}</td>`;
       }).join('')}</tr>`).join('')}</tbody>
