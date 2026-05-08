@@ -187,7 +187,7 @@
 // ══════════════════════════════════════════════════════════════
 //  ⚠️  REPLACE WITH YOUR DEPLOYED APPS SCRIPT WEB APP URL
 // ══════════════════════════════════════════════════════════════
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7APJ3HjGjs_PLt3Qi7mTcBF13qiIWVB1G-zlaRMZhaAcTu-Ig5BPlbNJh7xMyCiFmLg/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyZEIU0WaPtpeOmwwnjdEHbhh1cVkOmcdLyo_Yz3GimltktyqDZz-O8d62dk9x74eYhfA/exec";
 
 // ═══════════════════════════════════════════════════════════════
 //  FIELD CONFIG — names match your Tracker Excel headers exactly
@@ -201,40 +201,32 @@ const CLOSURE_EXTRA_REQUIRED = [
 ];
 
 // Fields that are always optional regardless of status
-const ALWAYS_OPTIONAL = ['Module Classification', 'Current Owner'];
+// NOTE: Module Classification removed from tracker — no longer in this list
+const ALWAYS_OPTIONAL = ['Current Owner'];
 
 // All optional fields (for label decoration)
+// Module Classification and SR Open Date removed from tracker
 const OPTIONAL_FIELDS = [
-  'Module Classification', 'SR Open Date', 'Close Date',
-  'Detail Description and Solution', 'SAAS Support SR (if any)', 'Current Owner'
+  'Close Date',
+  'Detail Description and Solution',
+  'SAAS Support SR (if any)',
+  'Current Owner'
 ];
 
 // Statuses that trigger closure field expansion
-// NOTE: Resolved and Closed are treated separately for display but
-//       both trigger the same field requirements
 const RESOLVED_STATUSES = ['Resolved', 'Resolution Pending'];
 const CLOSED_STATUSES   = ['Closed'];
 const TERMINAL_STATUSES = [...RESOLVED_STATUSES, ...CLOSED_STATUSES];
 
-// Field type config — keys match Tracker column names
+// Field type config — keys match Tracker column names exactly
 const FIELD_CONFIG = {
-  'SR Open Date':    { type:'date' },
   'Assignment Date': { type:'date' },
   'Close Date':      { type:'date' },
   'Priority':        { type:'select', options:['P1 - Critical','P2 - High','P3 - Medium','P4 - Low'] },
   'Severity':        { type:'select', options:['1','2','3','4','5','6','7','8','9'] },
   'Status':          { type:'select', options:['Open','In Progress','Pending','On Hold','On Hold-Awaiting Customer','Resolution Pending','Resolved','Closed'] },
-  // Tracker uses 'Type' as the actual column name
   'Type':            { type:'select', options:['Type1','Type2','Type3','TBD','FSR'] },
   'Incident Category': { type:'select', options:['Configuration','Enhancement','NewReport','Change','Data Fix','How To','Documentation'] },
-  // Tracker uses 'Module Classification' as the actual column name
-  'Module Classification': { type:'select', options:[
-    'OTM - OTM','OIC - OIC','CPQ - CPQ','EPM - PBCS','Tech -',
-    'ERP - Fixed Assets','ERP - Accounts Payables','ERP - Accounts Receivable',
-    'ERP - General Ledger','SCM - OM','SCM - Procurement','SCM - Planning',
-    'General - NA','ERP - Monitoring','ERP - BI Reports','SAAS+ - NA',
-    'WMS - WMS','SCM - INV','SCM - Costing'
-  ]},
   'Comments':                        { type:'textarea' },
   'Description':                     { type:'textarea' },
   'Detail Description and Solution': { type:'textarea' },
