@@ -699,12 +699,13 @@ function renderMissing(data){
   if(!data.length){c.innerHTML=emptyMsg('All ServiceNow incidents are tracked');return;}
   c.innerHTML=`<table><thead><tr>
     <th>Incident#</th><th>Priority</th><th>Short Description</th>
-    <th>Opened (SN)</th><th>Closed (SN)</th><th>Incident State</th><th>Assigned To</th>
+    <th>Caller</th><th>Opened (SN)</th><th>Closed (SN)</th><th>Incident State</th><th>Assigned To</th>
   </tr></thead><tbody>
   ${data.map(r=>`<tr>
     <td><strong>${r['Number']||'N/A'}</strong></td>
     <td class="${pc(r['Priority'])}">${r['Priority']||'N/A'}</td>
     <td>${r['Short description']||'N/A'}</td>
+    <td style="font-size:.8em;">${r['Caller']||'N/A'}</td>
     <td style="font-size:.75em;color:var(--text-dim);white-space:nowrap;">${fmtSNDate(r['Opened'])}</td>
     <td style="font-size:.75em;white-space:nowrap;">${r['Incident state']==='Closed'||r['Incident state']==='Resolved'
       ? `<span style="color:var(--closed);">${fmtSNDate(r['Closed'])}</span>`
