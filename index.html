@@ -1214,13 +1214,9 @@ function buildUpdatedTrackerRows(){
   trData.forEach(original=>{
     const sr=getSRNum(original,false);
     if(!sr) return;
-    if(!snMap.has(sr)){
-      log.push({action:'Delete tracker-only row', incident:sr, field:'Row', oldValue:'Present in tracker', newValue:'Removed from output', source:'ServiceNow comparison'});
-      return;
-    }
     presentTrackerIncidents.add(sr);
     const row=toTrackerOutputRow(original);
-    syncRowFromSN(row,snMap.get(sr),log);
+    if(snMap.has(sr)) syncRowFromSN(row,snMap.get(sr),log);
     applyResponseFields(row,responseMap.get(sr),log);
     rows.push(row);
   });
