@@ -165,7 +165,7 @@
   </div>
 
   <div class="form-wrap">
-    <div class="notice">⚠️ Fields marked <strong>*</strong> are required. If an incident is <strong>Resolved</strong> or <strong>Closed</strong>, closure fields (Close Date, Detail Description &amp; Solution, SAAS Support SR) become mandatory.</div>
+    <div class="notice">⚠️ Fields marked <strong>*</strong> are required. If an incident is <strong>Resolved</strong> or <strong>Closed</strong>, closure fields through column T (Close Date and Detail Description &amp; Solution) become mandatory.</div>
     <div id="formContainer"></div>
   </div>
 </div>
@@ -187,7 +187,7 @@
 // ══════════════════════════════════════════════════════════════
 //  ⚠️  REPLACE WITH YOUR DEPLOYED APPS SCRIPT WEB APP URL
 // ══════════════════════════════════════════════════════════════
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzybVhZRpYaa3oNC3CpXn7UkCdFnnNv9CdBXdamyyHMgMq9FacA-Zzt6PY5w0rcFCPNkg/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKvLwqIpBTj6sC8xnrm1S3HkGoue6Ms1eRe-CqacrPaRGonYa9R9-1LJQRVF73MoSlow/exec";
 
 // ═══════════════════════════════════════════════════════════════
 //  FIELD CONFIG — names match your Tracker Excel headers exactly
@@ -196,20 +196,16 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzybVhZRpYaa3oN
 // Fields that become REQUIRED when SN state is Resolved OR Closed
 const CLOSURE_EXTRA_REQUIRED = [
   'Close Date',
-  'Detail Description and Solution',
-  'SAAS Support SR (if any)'
+  'Detail Description and Solution'
 ];
 
 // Fields that are always optional regardless of status
-// NOTE: Module Classification removed from tracker — no longer in this list
 const ALWAYS_OPTIONAL = ['Current Owner'];
 
 // All optional fields (for label decoration)
-// Module Classification and SR Open Date removed from tracker
 const OPTIONAL_FIELDS = [
   'Close Date',
   'Detail Description and Solution',
-  'SAAS Support SR (if any)',
   'Current Owner'
 ];
 
@@ -220,22 +216,25 @@ const TERMINAL_STATUSES = [...RESOLVED_STATUSES, ...CLOSED_STATUSES];
 
 // Field type config — keys match Tracker column names exactly
 const FIELD_CONFIG = {
+  'SR Open Date':    { type:'date' },
   'Assignment Date': { type:'date' },
   'Close Date':      { type:'date' },
   'Priority':        { type:'select', options:['P1 - Critical','P2 - High','P3 - Medium','P4 - Low'] },
   'Severity':        { type:'select', options:['1','2','3','4','5','6','7','8','9'] },
   'Status':          { type:'select', options:['Open','In Progress','Pending','On Hold','On Hold-Awaiting Customer','Resolution Pending','Resolved','Closed'] },
   'Type':            { type:'select', options:['Type1','Type2','Type3','TBD','FSR'] },
+  'Module Classification': { type:'text', placeholder:'e.g. OTM - OTM' },
   'Incident Category': { type:'select', options:['Configuration','Enhancement','NewReport','Change','Data Fix','How To','Documentation'] },
+  'Issue category':                { type:'text' },
+  'Issue  Sub-categories':         { type:'text' },
   'Comments':                        { type:'textarea' },
   'Description':                     { type:'textarea' },
   'Detail Description and Solution': { type:'textarea' },
-  'SAAS Support SR (if any)':        { type:'text', placeholder:'e.g. SR123456 or N/A' },
 };
 
 const WIDE_FIELDS = [
   'Comments','Description','Detail Description and Solution',
-  'SAAS Support SR (if any)','CSU','Requested By','Current Owner'
+  'Issue  Sub-categories','CSU','Requested By','Current Owner'
 ];
 
 // ── State ──────────────────────────────────────────────────────
