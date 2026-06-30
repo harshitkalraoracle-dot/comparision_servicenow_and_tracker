@@ -223,9 +223,10 @@ tr:hover td{background:rgba(255,255,255,.015);}
     <div class="controls-bar">
       <div class="toggle-row" onclick="toggleOpt()">
         <div class="toggle-track" id="togTrack"><div class="toggle-thumb"></div></div>
-        <span class="toggle-label">Include optional columns: <em>Close Date, Detail Description and Solution, SAAS Support SR (if any), Current Owner</em></span>
+        <span class="toggle-label">Include optional columns through column T: <em>Close Date, Detail Description and Solution, Current Owner</em></span>
       </div>
       <button class="btn btn-primary" id="analyzeBtn" onclick="runAnalysis()" disabled>🔍 Analyze</button>
+      <button class="btn btn-success" id="downloadUpdatedBtn" onclick="downloadUpdatedTracker()" disabled>⬇ Updated Tracker</button>
     </div>
     <div id="results" style="display:none;">
       <div class="stats-grid">
@@ -267,6 +268,7 @@ tr:hover td{background:rgba(255,255,255,.015);}
       </div>
       <button class="btn btn-outline" onclick="loadResponses()">↻ Refresh</button>
       <button class="btn btn-success" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn btn-primary" id="downloadUpdatedBtn2" onclick="downloadUpdatedTracker()" disabled>⬇ Updated Tracker</button>
     </div>
     <div id="responsesTable"><div class="empty"><div class="ck">📥</div>Click Refresh to load responses from Google Sheets</div></div>
   </div>
@@ -278,8 +280,8 @@ tr:hover td{background:rgba(255,255,255,.015);}
       <p style="color:var(--text-dim);font-size:.8rem;margin-bottom:28px;">LZ-String compression — links are self-contained.</p>
       <div class="setup-step"><div class="step-num">1</div><div class="step-content"><h3>Create a Google Sheet</h3><p>Go to <a href="https://sheets.google.com" target="_blank" style="color:var(--accent2)">sheets.google.com</a> → name it <code>Incident Tracker Responses</code>.</p></div></div>
       <div class="setup-step"><div class="step-num">2</div><div class="step-content"><h3>Open Apps Script</h3><p><strong>Extensions → Apps Script</strong> → paste <code>Code.gs</code> → Save.</p></div></div>
-      <div class="setup-step"><div class="step-num">3</div><div class="step-content"><h3>Deploy as Web App</h3><p>Execute as: <code>Me</code> · Access: <code>Anyone</code> → Deploy → Copy URL.</p><div class="url-display">https://script.google.com/macros/s/AKfycb.../exec</div></div></div>
-      <div class="setup-step"><div class="step-num">4</div><div class="step-content"><h3>Update form.html</h3><p>Find <code>const APPS_SCRIPT_URL = "..."</code> → paste your Web App URL.</p></div></div>
+      <div class="setup-step"><div class="step-num">3</div><div class="step-content"><h3>Deploy as Web App</h3><p>Execute as: <code>Me</code> · Access: <code>Anyone</code> → Deploy → Copy URL.</p><div class="url-display">https://script.google.com/macros/s/AKfycbxKvLwqIpBTj6sC8xnrm1S3HkGoue6Ms1eRe-CqacrPaRGonYa9R9-1LJQRVF73MoSlow/exec</div></div></div>
+      <div class="setup-step"><div class="step-num">4</div><div class="step-content"><h3>Update form.html</h3><p>Already set to deployment <code>AKfycbxKvLwqIpBTj6sC8xnrm1S3HkGoue6Ms1eRe-CqacrPaRGonYa9R9-1LJQRVF73MoSlow</code>.</p></div></div>
       <div class="setup-step"><div class="step-num">5</div><div class="step-content"><h3>Update index.html</h3><p>Find <code>const GITHUB_PAGES_BASE = "..."</code> → paste your GitHub Pages URL.</p></div></div>
       <div class="setup-step"><div class="step-num">6</div><div class="step-content"><h3>Push to GitHub &amp; enable Pages</h3><p><strong>Settings → Pages → Source: main / root</strong> → Save.</p></div></div>
       <div class="setup-step"><div class="step-num">7</div><div class="step-content"><h3>Paste Apps Script URL in topbar</h3><p>Used only for the Responses tab to read back submissions.</p></div></div>
@@ -327,23 +329,43 @@ tr:hover td{background:rgba(255,255,255,.015);}
 
 <script>
 const GITHUB_PAGES_BASE = "https://harshitkalraoracle-dot.github.io/comparision_servicenow_and_tracker";
+const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKvLwqIpBTj6sC8xnrm1S3HkGoue6Ms1eRe-CqacrPaRGonYa9R9-1LJQRVF73MoSlow/exec";
 
 // ═══════════════════════════════════════════════════════════════
 //  COLUMN DEFINITIONS — matched exactly to your Excel headers
 // ═══════════════════════════════════════════════════════════════
 //
-// TRACKER columns (exact header names in current .xlsx):
-//   S.No, Incident#, Assignment Date, Close Date, Incident Category,
-//   Type, CSU, Priority, Severity, Description, Requested By,
-//   Worked By, Status, Current Owner,
-//   Detail Description and Solution, Comments, SAAS Support SR (if any)
-//
-// NOTE: 'Module Classification' and 'SR Open Date' have been removed
-//       from the tracker — they are no longer checked or shown.
+// TRACKER columns used for the generated updated workbook:
+//   A:T only, matching the tracker format you provided.
 //
 // SERVICENOW columns (exact header names in your .xlsx):
 //   Number, Opened, Caller, Location, Short description, Classification,
 //   Incident state, Priority, Assignment group, Assigned to, Closed, Actual start
+
+const TRACKER_OUTPUT_COLUMNS = [
+  'S.No',
+  'Incident#',
+  'Module Classification',
+  'SR Open Date',
+  'Assignment Date',
+  'Close Date',
+  'Incident Category',
+  'Type',
+  'CSU',
+  'Priority',
+  'Severity',
+  'Description',
+  'Issue category',
+  'Issue  Sub-categories',
+  'Requested By',
+  'Worked By',
+  'Status',
+  'Current Owner',
+  'Detail Description and Solution',
+  'Comments'
+];
+
+const NON_EDITABLE_TRACKER_FIELDS = new Set(['S.No', 'Incident#']);
 
 // ── Helpers to read Incident# from each sheet ──────────────────
 function getSRNum(r, isSN) {
@@ -353,12 +375,16 @@ function getSRNum(r, isSN) {
 
 // ── Required Tracker columns (always checked) ──────────────────
 const REQUIRED = [
+  'Module Classification',
+  'SR Open Date',
   'Incident Category',
   'Type',
   'CSU',
   'Priority',
   'Severity',
   'Description',
+  'Issue category',
+  'Issue  Sub-categories',
   'Requested By',
   'Worked By',
   'Status',
@@ -367,16 +393,14 @@ const REQUIRED = [
 ];
 
 // ── Optional Tracker columns (shown only when toggle is ON) ────
-// Module Classification and SR Open Date removed — no longer in tracker
 const OPTIONAL = [
   'Close Date',
   'Current Owner',
-  'Detail Description and Solution',
-  'SAAS Support SR (if any)'
+  'Detail Description and Solution'
 ];
 
 // Closure fields — injected into form when incident is Resolved/Closed in SN
-const CLOSURE_FIELDS = ['Close Date', 'Detail Description and Solution', 'SAAS Support SR (if any)'];
+const CLOSURE_FIELDS = ['Close Date', 'Detail Description and Solution'];
 
 // SN terminal states — 'Resolution Pending' is treated like Resolved for gap detection
 // (SN marks it when waiting for customer confirmation before closing)
@@ -386,11 +410,11 @@ const TR_TERMINAL_STATES    = ['Resolved', 'Closed'];
 
 const AVATAR_COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ef4444','#06b6d4'];
 const URL_MAX = 8000;
-let snData=null, trData=null, checkOpt=false, allIncomplete={}, formIncomplete={};
+let snData=null, trData=null, checkOpt=false, allIncomplete={}, formIncomplete={}, loadedResponses=[];
 window._snFile=null; window._trFile=null;
 
 function saveConfig(){const u=document.getElementById('appsScriptUrl').value.trim();if(u)localStorage.setItem('appsScriptUrl',u);}
-function loadConfig(){const s=localStorage.getItem('appsScriptUrl');if(s)document.getElementById('appsScriptUrl').value=s;}
+function loadConfig(){const s=localStorage.getItem('appsScriptUrl');document.getElementById('appsScriptUrl').value=s||DEFAULT_APPS_SCRIPT_URL;}
 function getAppsScriptUrl(){return document.getElementById('appsScriptUrl').value.trim();}
 
 function showPage(id){
@@ -421,16 +445,138 @@ function processFile(type,file){
   const el=document.getElementById(type==='sn'?'snName':'trName');
   el.textContent='✓ '+file.name; el.style.display='block';
   document.getElementById('analyzeBtn').disabled=!(window._snFile&&window._trFile);
+  setDownloadButtons(false);
 }
 
 function readXLSX(file){
   return new Promise((res,rej)=>{
     const r=new FileReader();
-    r.onload=e=>{try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});res(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{raw:false,defval:''}));}catch(err){rej(err);}};
+    r.onload=e=>{try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:false});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{raw:false,defval:''});
+      rows.forEach((row,i)=>{row.__rowNum=i+2;});
+      res(rows);
+    }catch(err){rej(err);}};
     r.onerror=rej; r.readAsArrayBuffer(file);
   });
 }
 function toggleOpt(){checkOpt=!checkOpt;document.getElementById('togTrack').classList.toggle('on',checkOpt);}
+function setDownloadButtons(enabled){
+  ['downloadUpdatedBtn','downloadUpdatedBtn2'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.disabled=!enabled;
+  });
+}
+
+function isBlankValue(v){
+  if(v===undefined || v===null) return true;
+  const s=String(v).trim();
+  return !s || s==='—' || s.toLowerCase()==='none' || s.toLowerCase()==='n/a';
+}
+
+function asText(v){
+  return v===undefined || v===null ? '' : String(v).trim();
+}
+
+function buildLatestResponseMap(rows){
+  const map=new Map();
+  (rows||[]).forEach(row=>{
+    const sr=asText(row['SR#'] || row['Incident#']);
+    if(!sr) return;
+    const prev=map.get(sr);
+    const t=Date.parse(row.Timestamp || row.submittedAt || '') || 0;
+    const pt=prev ? (Date.parse(prev.Timestamp || prev.submittedAt || '') || 0) : -1;
+    if(!prev || t>=pt) map.set(sr,row);
+  });
+  return map;
+}
+
+function applyResponseFields(target,response,log){
+  if(!response) return target;
+  TRACKER_OUTPUT_COLUMNS.forEach(col=>{
+    if(NON_EDITABLE_TRACKER_FIELDS.has(col)) return;
+    if(response[col]===undefined || isBlankValue(response[col])) return;
+    const oldVal=asText(target[col]);
+    const newVal=asText(response[col]);
+    if(oldVal===newVal) return;
+    target[col]=newVal;
+    if(log) log.push({action:'Update from Google response', incident:target['Incident#']||response['SR#']||'', field:col, oldValue:oldVal, newValue:newVal, source:response.Person||'Member response'});
+  });
+  return target;
+}
+
+function effectiveTrackerRow(row,responseMap){
+  const out={...(row||{})};
+  const sr=getSRNum(out,false);
+  return applyResponseFields(out,responseMap.get(sr));
+}
+
+function setField(row,field,value,log,action){
+  if(isBlankValue(value)) return;
+  const oldVal=asText(row[field]);
+  const newVal=asText(value);
+  if(oldVal===newVal) return;
+  row[field]=newVal;
+  if(log) log.push({action, incident:row['Incident#']||'', field, oldValue:oldVal, newValue:newVal, source:'ServiceNow'});
+}
+
+function setFieldIfBlank(row,field,value,log,action){
+  if(!isBlankValue(row[field])) return;
+  setField(row,field,value,log,action);
+}
+
+function classificationToModule(classification){
+  const s=asText(classification);
+  const upper=s.toUpperCase();
+  if(upper.includes('ORACLE OTM')) return 'OTM - OTM';
+  if(upper.includes('ORACLE GTM')) return 'GTM - GTM';
+  const parts=s.split('>').map(p=>p.trim()).filter(Boolean);
+  return parts.length ? parts[parts.length-1] : '';
+}
+
+function emptyTrackerRow(){
+  const row={};
+  TRACKER_OUTPUT_COLUMNS.forEach(col=>{row[col]='';});
+  return row;
+}
+
+function toTrackerOutputRow(row){
+  const out=emptyTrackerRow();
+  TRACKER_OUTPUT_COLUMNS.forEach(col=>{out[col]=row[col]!==undefined && row[col]!==null ? row[col] : '';});
+  return out;
+}
+
+function buildMissingTrackerRowFromSN(snRow){
+  const out=emptyTrackerRow();
+  out['Incident#']=getSRNum(snRow,true);
+  out['Module Classification']=classificationToModule(snRow['Classification']);
+  out['SR Open Date']=asText(snRow['Opened']);
+  out['Assignment Date']=asText(snRow['Actual start'] || snRow['Opened']);
+  out['Close Date']=asText(snRow['Closed']);
+  out['Priority']=asText(snRow['Priority']);
+  out['Description']=asText(snRow['Short description']);
+  out['Requested By']=asText(snRow['Caller']);
+  out['Worked By']=asText(snRow['Assigned to']);
+  out['Status']=asText(snRow['Incident state']);
+  out['Current Owner']=asText(snRow['Assignment group']);
+  return out;
+}
+
+function syncRowFromSN(row,snRow,log){
+  if(!snRow) return row;
+  setField(row,'Priority',snRow['Priority'],log,'Sync priority from ServiceNow');
+  setField(row,'Status',snRow['Incident state'],log,'Sync status from ServiceNow');
+  setField(row,'Worked By',snRow['Assigned to'],log,'Sync owner from ServiceNow');
+  setFieldIfBlank(row,'Module Classification',classificationToModule(snRow['Classification']),log,'Fill blank from ServiceNow');
+  setFieldIfBlank(row,'SR Open Date',snRow['Opened'],log,'Fill blank from ServiceNow');
+  setFieldIfBlank(row,'Assignment Date',snRow['Actual start'] || snRow['Opened'],log,'Fill blank from ServiceNow');
+  setFieldIfBlank(row,'Close Date',snRow['Closed'],log,'Fill blank from ServiceNow');
+  setFieldIfBlank(row,'Description',snRow['Short description'],log,'Fill blank from ServiceNow');
+  setFieldIfBlank(row,'Requested By',snRow['Caller'],log,'Fill blank from ServiceNow');
+  setFieldIfBlank(row,'Current Owner',snRow['Assignment group'],log,'Fill blank from ServiceNow');
+  return row;
+}
 
 async function runAnalysis(){
   const btn=document.getElementById('analyzeBtn');
@@ -442,16 +588,18 @@ async function runAnalysis(){
     document.getElementById('results').style.display='block';
     document.querySelectorAll('.sec-body').forEach(b=>b.classList.add('open'));
     document.querySelectorAll('.sec-chev').forEach(c=>c.style.transform='rotate(180deg)');
+    setDownloadButtons(true);
     btn.textContent='✓ Done';
     setTimeout(()=>{btn.textContent='🔍 Analyze';btn.disabled=false;},2000);
-  }catch(err){alert('Error: '+err.message);btn.textContent='🔍 Analyze';btn.disabled=false;}
+  }catch(err){alert('Error: '+err.message);btn.textContent='🔍 Analyze';btn.disabled=false;setDownloadButtons(false);}
 }
 
 function analyze(){
   // ── Build lookup maps keyed by Incident# ──────────────────────
   const trMap=new Map(), snMap=new Map();
-  trData.forEach(r=>{const s=getSRNum(r,false);if(s)trMap.set(s,r);});
+  trData.forEach(r=>{const s=getSRNum(r,false);if(s&&!trMap.has(s))trMap.set(s,r);});
   snData.forEach(r=>{const s=getSRNum(r,true); if(s)snMap.set(s,r);});
+  const responseMap=buildLatestResponseMap(loadedResponses);
 
   // ── 1. In SN but not in Tracker ───────────────────────────────
   const missing=snData.filter(r=>{const s=getSRNum(r,true);return s&&!trMap.has(s);});
@@ -465,7 +613,7 @@ function analyze(){
   snData.forEach(r=>{
     const s=getSRNum(r,true);
     if(s&&trMap.has(s)){
-      const tr=trMap.get(s);
+      const tr=effectiveTrackerRow(trMap.get(s), responseMap);
       const sp=(r['Priority']||'').trim(), tp=(tr['Priority']||'').trim();
       if(sp&&tp&&sp!==tp)
         mismatches.push({sr:s, snP:sp, trP:tp,
@@ -479,17 +627,18 @@ function analyze(){
   const cols = checkOpt ? [...REQUIRED, ...OPTIONAL] : [...REQUIRED];
   const raw  = {};
   trData.forEach(r=>{
-    const person=(r['Worked By']||'').trim()||'Unassigned';
     const sr=getSRNum(r,false)||'N/A';
     if(sr==='N/A') return;   // skip blank rows
+    const effective=effectiveTrackerRow(r, responseMap);
+    const person=(effective['Worked By']||'').trim()||'Unassigned';
 
-    const empty=cols.filter(f=>!(r[f]||'').toString().trim());
+    const empty=cols.filter(f=>isBlankValue(effective[f]));
     if(!empty.length) return;
 
-    const status=(r['Status']||'').trim();
+    const status=(effective['Status']||'').trim();
     if(!raw[person]) raw[person]={};
     if(!raw[person][sr])
-      raw[person][sr]={fields:empty, description:(r['Description']||'N/A'), rowCount:1, status};
+      raw[person][sr]={fields:empty, description:(effective['Description']||'N/A'), rowCount:1, status};
     else{
       raw[person][sr].rowCount++;
       empty.forEach(f=>{if(!raw[person][sr].fields.includes(f))raw[person][sr].fields.push(f);});
@@ -536,7 +685,7 @@ function analyze(){
   snData.forEach(r=>{
     const s     = getSRNum(r,true);
     if(!s || !trMap.has(s)) return;
-    const tr    = trMap.get(s);
+    const tr    = effectiveTrackerRow(trMap.get(s), responseMap);
     const snSt  = (r['Incident state']||'').toString().trim();
     const trSt  = (tr['Status']||'').toString().trim();
     if(!snSt || !trSt || snSt === trSt) return;   // exact match = no drift
@@ -592,7 +741,7 @@ function analyze(){
   snData.forEach(r=>{
     const s=getSRNum(r,true);
     if(!s||!trMap.has(s)) return;
-    const tr=trMap.get(s);
+    const tr=effectiveTrackerRow(trMap.get(s), responseMap);
     // SN column is 'Assigned to' (lowercase t)
     const snOwner=(r['Assigned to']||'').trim();
     const trOwner=(tr['Worked By']||'').trim();
@@ -629,13 +778,13 @@ function analyze(){
 
   // ── Merge closure fields into formIncomplete ───────────────────
   // For incidents where SN is Resolved/Closed but tracker isn't yet,
-  // add Close Date / Detail Description / SAAS SR to that person's form.
+  // add Close Date / Detail Description to that person's form.
   formIncomplete = JSON.parse(JSON.stringify(allIncomplete));
   const allClosureNeeded = [...statusDrift.needs_close, ...statusDrift.sn_advanced];
   allClosureNeeded.forEach(gap=>{
     const person=gap.by;
     if(!person||person==='—') return;
-    const trRow=trMap.get(gap.inc);
+    const trRow=effectiveTrackerRow(trMap.get(gap.inc), responseMap);
     const missingClosureFields=CLOSURE_FIELDS.filter(f=>{
       const val=trRow?(trRow[f]||'').toString().trim():'';
       return !val||val.toLowerCase()==='none';
@@ -1043,22 +1192,100 @@ function copyAllLinks(){
   navigator.clipboard.writeText(lines.join('\n\n')).then(()=>toast(`✓ ${lines.length} links copied`));
 }
 
+async function fetchResponses(){
+  const url=getAppsScriptUrl();if(!url){toast('⚠️ Paste your Apps Script URL first');return;}
+  const res=await fetch(`${url}?action=read`);if(!res.ok)throw new Error(`HTTP ${res.status}`);
+  const data=await res.json();if(data.status!=='ok')throw new Error(data.message);
+  loadedResponses=data.data||[];
+  return loadedResponses;
+}
+
+function buildUpdatedTrackerRows(){
+  if(!snData||!trData) throw new Error('Upload and analyze both workbooks first.');
+  const snMap=new Map();
+  snData.forEach(r=>{const sr=getSRNum(r,true);if(sr)snMap.set(sr,r);});
+  const responseMap=buildLatestResponseMap(loadedResponses);
+  const seen=new Set();
+  const rows=[];
+  const log=[];
+
+  trData.forEach(original=>{
+    const sr=getSRNum(original,false);
+    if(!sr) return;
+    if(!snMap.has(sr)){
+      log.push({action:'Delete tracker-only row', incident:sr, field:'Row', oldValue:'Present in tracker', newValue:'Removed from output', source:'ServiceNow comparison'});
+      return;
+    }
+    if(seen.has(sr)){
+      log.push({action:'Delete duplicate row', incident:sr, field:'Row', oldValue:`Tracker row ${original.__rowNum||''}`.trim(), newValue:'Removed from output', source:'Duplicate cleanup'});
+      return;
+    }
+    seen.add(sr);
+    const row=toTrackerOutputRow(original);
+    syncRowFromSN(row,snMap.get(sr),log);
+    applyResponseFields(row,responseMap.get(sr),log);
+    rows.push(row);
+  });
+
+  snData.forEach(snRow=>{
+    const sr=getSRNum(snRow,true);
+    if(!sr||seen.has(sr)) return;
+    const row=buildMissingTrackerRowFromSN(snRow);
+    log.push({action:'Add missing ServiceNow incident', incident:sr, field:'Row', oldValue:'Missing in tracker', newValue:'Added to output', source:'ServiceNow'});
+    applyResponseFields(row,responseMap.get(sr),log);
+    rows.push(row);
+    seen.add(sr);
+  });
+
+  rows.forEach((row,i)=>{row['S.No']=i+1;});
+  return {rows,log};
+}
+
+async function downloadUpdatedTracker(){
+  try{
+    if(!snData||!trData){toast('⚠️ Analyze both files first');return;}
+    if(getAppsScriptUrl()){
+      await fetchResponses();
+      const respCount=document.getElementById('respCount');
+      if(respCount) respCount.textContent=loadedResponses.length;
+    } else {
+      toast('No Apps Script URL found; downloading without member responses');
+    }
+    const {rows,log}=buildUpdatedTrackerRows();
+    const wb=XLSX.utils.book_new();
+    const aoa=[TRACKER_OUTPUT_COLUMNS,...rows.map(row=>TRACKER_OUTPUT_COLUMNS.map(col=>row[col]!==undefined?row[col]:''))];
+    const ws=XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols']=TRACKER_OUTPUT_COLUMNS.map(col=>({wch:Math.min(Math.max(col.length+2,12),42)}));
+    XLSX.utils.book_append_sheet(wb,ws,'SR Tracker-Updated');
+
+    const logHeaders=['Action','Incident#','Field','Old Value','New Value','Source'];
+    const logRows=log.map(item=>[item.action,item.incident,item.field,item.oldValue,item.newValue,item.source]);
+    const logWs=XLSX.utils.aoa_to_sheet([logHeaders,...logRows]);
+    logWs['!cols']=[{wch:30},{wch:16},{wch:28},{wch:36},{wch:36},{wch:24}];
+    XLSX.utils.book_append_sheet(wb,logWs,'Change Log');
+
+    const stamp=new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb,`Incident_Tracker_Updated_${stamp}.xlsx`);
+    toast(`✓ Updated tracker downloaded (${rows.length} rows, ${log.length} changes)`);
+  }catch(err){
+    alert('Could not build updated tracker: '+err.message);
+  }
+}
+
 // ── Responses tab ──────────────────────────────────────────────
 async function loadResponses(){
-  const url=getAppsScriptUrl();if(!url){toast('⚠️ Paste your Apps Script URL first');return;}
   document.getElementById('responsesTable').innerHTML='<div class="empty"><div style="font-size:1.4rem">⏳</div>Loading…</div>';
   try{
-    const res=await fetch(`${url}?action=read`);if(!res.ok)throw new Error(`HTTP ${res.status}`);
-    const data=await res.json();if(data.status!=='ok')throw new Error(data.message);
-    const rows=data.data;document.getElementById('respCount').textContent=rows.length;
-    if(!rows.length){document.getElementById('responsesTable').innerHTML='<div class="empty"><div class="ck">📭</div>No responses yet</div>';return;}
+    const rows=await fetchResponses();
+    document.getElementById('respCount').textContent=rows.length;
+    if(!rows.length){document.getElementById('responsesTable').innerHTML='<div class="empty"><div class="ck">📭</div>No responses yet</div>';if(snData&&trData)analyze();return;}
 
     const DISPLAY_COLS=[
       'Timestamp','Person','SR#','Description',
-      'Assignment Date','Incident Category','Type',
+      'Module Classification','SR Open Date','Assignment Date','Incident Category','Type',
       'CSU','Priority','Severity','Requested By','Worked By','Status',
       'Current Owner','Comments','Close Date',
-      'Detail Description and Solution','SAAS Support SR (if any)','Row Count'
+      'Issue category','Issue  Sub-categories','Detail Description and Solution','Row Count'
     ];
 
     const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1072,6 +1299,7 @@ async function loadResponses(){
         return `<td style="${empty?'color:var(--text-ghost)':''}">${esc(empty?'—':v)}</td>`;
       }).join('')}</tr>`).join('')}</tbody>
     </table>`;
+    if(snData&&trData)analyze();
   }catch(err){document.getElementById('responsesTable').innerHTML=`<div class="empty" style="color:var(--danger)">Error: ${err.message}</div>`;}
 }
 function exportCSV(){
