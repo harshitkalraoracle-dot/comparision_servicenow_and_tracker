@@ -228,6 +228,9 @@ tr:hover td{background:rgba(255,255,255,.015);}
       <button class="btn btn-primary" id="analyzeBtn" onclick="runAnalysis()" disabled>🔍 Analyze</button>
       <button class="btn btn-success" id="downloadUpdatedBtn" onclick="downloadUpdatedTracker()" disabled>⬇ Updated Tracker</button>
       <button class="btn btn-outline" id="downloadChangeLogBtn" onclick="downloadChangeLog()" disabled>⬇ Change Log</button>
+      <button class="btn btn-outline" id="downloadPayloadBtn" onclick="downloadUpdatePayload()" disabled>⬇ Flow Payload</button>
+      <button class="btn btn-primary" id="updateSharePointBtn" onclick="updateSharePointTracker()" disabled>↗ Update SharePoint</button>
+      <button class="btn btn-outline" onclick="reverseSharePointUpdate()">↩ Reverse Last Update</button>
     </div>
     <div id="results" style="display:none;">
       <div class="stats-grid">
@@ -332,6 +335,9 @@ tr:hover td{background:rgba(255,255,255,.015);}
 <script>
 const GITHUB_PAGES_BASE = "https://harshitkalraoracle-dot.github.io/comparision_servicenow_and_tracker";
 const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxKvLwqIpBTj6sC8xnrm1S3HkGoue6Ms1eRe-CqacrPaRGonYa9R9-1LJQRVF73MoSlow/exec";
+const TARGET_SHAREPOINT_SHEET_NAME = "SR Tracker-Open Items";
+const POWER_AUTOMATE_UPDATE_URL = ""; // Paste the Update flow HTTP URL here.
+const POWER_AUTOMATE_REVERT_URL = ""; // Paste the Revert flow HTTP URL here.
 
 // ═══════════════════════════════════════════════════════════════
 //  COLUMN DEFINITIONS — matched exactly to your Excel headers
@@ -465,7 +471,7 @@ function readXLSX(file){
 }
 function toggleOpt(){checkOpt=!checkOpt;document.getElementById('togTrack').classList.toggle('on',checkOpt);}
 function setDownloadButtons(enabled){
-  ['downloadUpdatedBtn','downloadUpdatedBtn2','downloadChangeLogBtn','downloadChangeLogBtn2'].forEach(id=>{
+  ['downloadUpdatedBtn','downloadUpdatedBtn2','downloadChangeLogBtn','downloadChangeLogBtn2','downloadPayloadBtn','updateSharePointBtn'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.disabled=!enabled;
   });
@@ -1288,6 +1294,83 @@ async function downloadChangeLog(){
     toast(`✓ Change log downloaded (${log.length} changes)`);
   }catch(err){
     alert('Could not build change log: '+err.message);
+  }
+}
+
+function powerAutomateUrlReady(url){
+  return !!url && /^https:\/\/[^/]+\.logic\.azure\.com\/workflows\//i.test(url);
+}
+
+async function postToPowerAutomate(url,payload){
+  if(!powerAutomateUrlReady(url)){
+    alert('Power Automate URL is not configured yet. Paste the HTTP trigger URL into the POWER_AUTOMATE_* constant in index.html.');
+    return false;
+  }
+  await fetch(url,{
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify(payload)
+  });
+  return true;
+}
+
+function newUpdateId(){
+  return 'IT-' + new Date().toISOString().replace(/[-:.TZ]/g,'').slice(0,14);
+}
+
+async function buildSharePointUpdatePayload(){
+  if(!snData||!trData) throw new Error('Analyze both files first');
+  await refreshResponsesForDownload();
+  const {rows,log}=buildUpdatedTrackerRows();
+  return {
+    action:'update',
+    updateId:newUpdateId(),
+    targetSheetName:TARGET_SHAREPOINT_SHEET_NAME,
+    columns:TRACKER_OUTPUT_COLUMNS,
+    rows,
+    log,
+    generatedAt:new Date().toISOString()
+  };
+}
+
+async function downloadUpdatePayload(){
+  try{
+    const payload=await buildSharePointUpdatePayload();
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`Incident_Tracker_Update_Payload_${payload.updateId}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast(`⬇ Flow payload downloaded (${payload.rows.length} rows, ${payload.log.length} changes)`);
+  }catch(err){
+    alert('Could not build update payload: '+err.message);
+  }
+}
+
+async function updateSharePointTracker(){
+  try{
+    const payload=await buildSharePointUpdatePayload();
+    const sent=await postToPowerAutomate(POWER_AUTOMATE_UPDATE_URL,payload);
+    if(sent) toast(`↗ SharePoint update sent (${payload.rows.length} rows, ${payload.log.length} changes). Check Power Automate run history.`);
+  }catch(err){
+    alert('Could not send SharePoint update: '+err.message);
+  }
+}
+
+async function reverseSharePointUpdate(){
+  try{
+    if(!confirm(`Reverse the last update on worksheet "${TARGET_SHAREPOINT_SHEET_NAME}"? This restores the last backup snapshot for columns A:T only.`)) return;
+    const payload={
+      action:'revert',
+      targetSheetName:TARGET_SHAREPOINT_SHEET_NAME,
+      requestedAt:new Date().toISOString()
+    };
+    const sent=await postToPowerAutomate(POWER_AUTOMATE_REVERT_URL,payload);
+    if(sent) toast('↩ Revert request sent. Check Power Automate run history.');
+  }catch(err){
+    alert('Could not send revert request: '+err.message);
   }
 }
 
